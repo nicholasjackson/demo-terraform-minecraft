@@ -63,7 +63,7 @@ resource "google_compute_address" "minecraft" {
 
 resource "kubernetes_service" "minecraft" {
   metadata {
-    name = "minecraft"
+    name = "minecraft-${var.environment}"
   }
 
   spec {
@@ -74,7 +74,7 @@ resource "kubernetes_service" "minecraft" {
     session_affinity = "ClientIP"
     port {
       protocol    = "TCP"
-      port        = 25566
+      port        = 25565
       target_port = 25565
     }
     type             = "LoadBalancer"
