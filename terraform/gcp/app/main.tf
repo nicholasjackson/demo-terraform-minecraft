@@ -143,6 +143,22 @@ resource "kubernetes_deployment" "minecraft" {
             }
           }
 
+          # WORLD_CHECKSUM will force the deployment to be recreated when the world file changes
+          env {
+            name = "WORLD_CHECKSUM"
+            value = file("./checksum.txt")
+          }
+
+          env {
+            name = "MODS_BACKUP"
+            value = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/mods/mods.tar.gz"
+          }
+          
+          env {
+            name = "WORLD_BACKUP"
+            value = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/${var.environment}/world.tar.gz"
+          }
+
           volume_mount {
             mount_path = "/minecraft/config"
             name = "config"

@@ -2,3 +2,6 @@ config.yaml
 .terraform
 data
 .git
+local_mods
+mods.tar.gz
+world.tar.gz
