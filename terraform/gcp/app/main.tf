@@ -11,7 +11,7 @@ variable "cluster" {
 }
 
 variable "environment" {
-  default = "prod"
+  default = ""
 }
 
 terraform {
