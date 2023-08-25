@@ -74,7 +74,7 @@ resource "kubernetes_service" "minecraft" {
     session_affinity = "ClientIP"
     port {
       protocol    = "TCP"
-      port        = 25565
+      port        = 25566
       target_port = 25565
     }
     type             = "LoadBalancer"
