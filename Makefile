@@ -2,7 +2,7 @@ tar_mods:
 	tar -C $(shell pwd)/local_mods -czf mods.tar.gz ./
 
 tar_world:
-	tar -C $(shell pwd)/world -czf ./terraform/gcp/app/world.tar.gz ./
+	tar -C $(shell pwd)/world -czf ./world.tar.gz ./
 
 run_local:
 	docker run \
