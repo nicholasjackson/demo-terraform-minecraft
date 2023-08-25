@@ -33,7 +33,7 @@ jobs:
           shasum -a 512 ./world.tar.gz > ./terraform/gcp/app/checksum.txt
 
       - name: Update release
-        uses: johnwbyrd/update-release@v1
+        uses: johnwbyrd/update-release@v1.0.0
         with:
           token: ${{ secrets.YOUR_PRIVATE_SECRET_TOKEN }}
           asset: ./world.tar.gz
