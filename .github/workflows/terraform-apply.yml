@@ -26,7 +26,7 @@ jobs:
 
       - name: Build the updated world
         run: |
-          tar -C $(shell pwd)/world -czf ./world.tar.gz ./
+          tar -C $(pwd)/world -czf ./world.tar.gz ./
       
       - name: Generate the checksum
         run: |
