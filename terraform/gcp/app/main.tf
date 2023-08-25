@@ -11,7 +11,11 @@ variable "cluster" {
 }
 
 variable "environment" {
-  default = "prod"
+  default = ""
+}
+
+variable "cloudflare_zone_id" {
+  default = ""
 }
 
 terraform {
@@ -19,7 +23,7 @@ terraform {
     organization = "HashiCraft"
 
     workspaces {
-      name = "app-prod"
+      name = "app-dev"
     }
   }
 
@@ -32,6 +36,11 @@ terraform {
     kubernetes = {
       source  = "hashicorp/kubernetes"
       version = "2.23.0"
+    }
+
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.0"
     }
   }
 }
@@ -57,13 +66,13 @@ provider "kubernetes" {
 }
 
 resource "google_compute_address" "minecraft" {
-  name   = "default"
+  name = "minecraft-${var.environment}"
   region = var.location
 }
 
 resource "kubernetes_service" "minecraft" {
   metadata {
-    name = "minecraft"
+    name = "minecraft-${var.environment}"
   }
 
   spec {
@@ -134,6 +143,22 @@ resource "kubernetes_deployment" "minecraft" {
             }
           }
 
+          # WORLD_CHECKSUM will force the deployment to be recreated when the world file changes
+          env {
+            name = "WORLD_CHECKSUM"
+            value = file("./checksum.txt")
+          }
+
+          env {
+            name = "MODS_BACKUP"
+            value = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/mods/mods.tar.gz"
+          }
+          
+          env {
+            name = "WORLD_BACKUP"
+            value = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/${var.environment}/world.tar.gz"
+          }
+
           volume_mount {
             mount_path = "/minecraft/config"
             name = "config"
@@ -151,6 +176,15 @@ resource "kubernetes_deployment" "minecraft" {
       }
     }
   }
+}
+
+resource "cloudflare_record" "minecraft" {
+  zone_id = var.cloudflare_zone_id
+  name = "minecraft-${var.environment}"
+  value   = google_compute_address.minecraft.address
+  type    = "A"
+  ttl     = 3600
+  proxied = false
 }
 
 output "minecraft_ip" {

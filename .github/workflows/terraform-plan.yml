@@ -6,7 +6,6 @@ on:
 env:
   TF_CLOUD_ORGANIZATION: "${{ secrets.TF_CLOUD_ORG }}"
   TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
-  TF_WORKSPACE: "${{ secrets.TF_WORKSPACE }}"
   CONFIG_DIRECTORY: "./terraform/gcp/app"
 
 jobs:
@@ -20,12 +19,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      
+      - name: Plan Env
+        run: |
+          echo "Running plan for ${{ github.base_ref }}"
 
       - name: Upload Configuration
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
         id: plan-upload
         with:
-          workspace: ${{ env.TF_WORKSPACE }}
+          workspace: app-${{ github.base_ref }}
           directory: ${{ env.CONFIG_DIRECTORY }}
           speculative: true
 
@@ -33,7 +36,7 @@ jobs:
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
         id: plan-run
         with:
-          workspace: ${{ env.TF_WORKSPACE }}
+          workspace: app-${{ github.base_ref }}
           configuration_version: ${{ steps.plan-upload.outputs.configuration_version_id }}
           plan_only: true
 
