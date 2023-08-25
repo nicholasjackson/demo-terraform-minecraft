@@ -57,7 +57,7 @@ provider "kubernetes" {
 }
 
 resource "google_compute_address" "minecraft" {
-  name   = "default"
+  name = "minecraft-${var.environment}"
   region = var.location
 }
 
