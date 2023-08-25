@@ -14,12 +14,16 @@ variable "environment" {
   default = ""
 }
 
+variable "cloudflare_zone_id" {
+  default = ""
+}
+
 terraform {
   cloud {
     organization = "HashiCraft"
 
     workspaces {
-      name = "app-prod"
+      name = "app-dev"
     }
   }
 
@@ -32,6 +36,11 @@ terraform {
     kubernetes = {
       source  = "hashicorp/kubernetes"
       version = "2.23.0"
+    }
+
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.0"
     }
   }
 }
@@ -151,6 +160,15 @@ resource "kubernetes_deployment" "minecraft" {
       }
     }
   }
+}
+
+resource "cloudflare_record" "minecraft" {
+  zone_id = var.cloudflare_zone_id
+  name = "minecraft-${var.environment}"
+  value   = google_compute_address.minecraft.address
+  type    = "A"
+  ttl     = 3600
+  proxied = false
 }
 
 output "minecraft_ip" {
