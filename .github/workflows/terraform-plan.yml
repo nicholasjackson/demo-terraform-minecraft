@@ -22,13 +22,13 @@ jobs:
       
       - name: Plan Env
         run: |
-          echo "Running plan for ${{ env.GITHUB_BASE_REF }}"
+          echo "Running plan for ${{ github.base_ref }}"
 
       - name: Upload Configuration
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
         id: plan-upload
         with:
-          workspace: app-${{ env.GITHUB_BASE_REF }}
+          workspace: app-${{ github.base_ref }}
           directory: ${{ env.CONFIG_DIRECTORY }}
           speculative: true
 
@@ -36,7 +36,7 @@ jobs:
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
         id: plan-run
         with:
-          workspace: app-${{ env.GITHUB_BASE_REF }}
+          workspace: app-${{ github.base_ref }}
           configuration_version: ${{ steps.plan-upload.outputs.configuration_version_id }}
           plan_only: true
 
