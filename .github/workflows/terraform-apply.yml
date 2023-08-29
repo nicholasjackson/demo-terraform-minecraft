@@ -38,6 +38,7 @@ jobs:
     
   test_policy:
     name: "Test Plan Output"
+    needs: build_world
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -66,13 +67,14 @@ jobs:
           TFC_TOKEN: ${{ secrets.TF_API_TOKEN }} 
 
       - name: Run Conftest
-        uses: actions/checkout@master
+        uses: instrumenta/conftest-action@master
         with:
           files: terraform/gcp/app/app-plan.json
           policy: terraform/gcp/app/policy
 
   apply_config:
     name: "Apply Configuration"
+    needs: test_policy
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
