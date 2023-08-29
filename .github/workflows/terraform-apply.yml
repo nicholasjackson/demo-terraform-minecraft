@@ -53,7 +53,7 @@ jobs:
       - name: Download TFC Plan
         run: |
           wget  https://github.com/nicholasjackson/tfc-plan/releases/download/v0.0.3/binary-linux-amd64
-          mv ./binary-linux-amd64 /usr/local/bin
+          mv ./binary-linux-amd64 /usr/local/bin/tfc-plan
 
       - name: Get Plan And Output JSON
         id: plan-run
