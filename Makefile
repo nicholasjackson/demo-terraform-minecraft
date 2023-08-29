@@ -18,3 +18,8 @@ run_local:
 		-p 25565:25565 \
 		-p 9090:9090 \
 		hashicraft/minecraft:v1.20.1-fabric
+
+run_tests:
+	cd ./terraform/gcp/app && \
+	tfc-plan --out app-plan.json && \
+	conftest test ./app-plan.json

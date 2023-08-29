@@ -1,13 +1,21 @@
 package main
 
-planned_resources = [res | 
-  res := input.planned_values.root_module.resources[_]
-  res.type == "null_resource"
+services := [serv |
+  serv := input.planned_values.root_module.resources[_]
+  serv.type == "kubernetes_service"
 ]
 
-num_planned_resources := count(planned_resources)
+minecraft_port := [port |
+    port := services[_].values.spec[_].port[_]
+    port.port == 25565
+]
 
 deny[msg] {
-  not num_planned_resources == 2
-  msg := "there should be 2 total null_resources"
+  count(minecraft_port) != 1
+  msg := sprintf("there should be a public service with a port 25565: %v",[minecraft_port])
+}
+
+deny[msg] {
+  minecraft_port[0].protocol != "TCP"
+  msg := sprintf("the protocol should be set to TCP: %v",[minecraft_port])
 }
