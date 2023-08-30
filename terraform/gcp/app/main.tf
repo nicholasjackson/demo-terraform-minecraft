@@ -18,15 +18,21 @@ variable "cloudflare_zone_id" {
   default = ""
 }
 
-# locals allow functions like file to be used, variables do not
+# Locals allow functions like file to be used, variables do not
+# Add the config files to a map so we can create kube volume mounts
+# The key is the path to mount the file with _ substituted for /
 locals {
   config_files = {
-    "banned-ips.json"     = "${file("${path.module}/config/banned-ips.json")}"
-    "banned-players.json" = "${file("${path.module}/config/banned-players.json")}"
-    "bukkit.yml"          = "${file("${path.module}/config/bukkit.yml")}"
-    "ops.json"            = "${file("${path.module}/config/ops.json")}"
-    "usercache.json"      = "${file("${path.module}/config/usercache.json")}"
-    "whitelist.json"      = "${file("${path.module}/config/whitelist.json")}"
+    "banned-ips.json"             = "${file("${path.module}/config/banned-ips.json")}"
+    "banned-players.json"         = "${file("${path.module}/config/banned-players.json")}"
+    "bukkit.yml"                  = "${file("${path.module}/config/bukkit.yml")}"
+    "ops.json"                    = "${file("${path.module}/config/ops.json")}"
+    "usercache.json"              = "${file("${path.module}/config/usercache.json")}"
+    "whitelist.json"              = "${file("${path.module}/config/whitelist.json")}"
+    "bluemap_core.conf"           = "${file("${path.module}/config/core.conf")}"
+    "bluemap_maps_overworld.conf" = "${file("${path.module}/config/overworld.conf")}"
+    "bluemap_maps_nether.conf"    = "${file("${path.module}/config/nether.conf")}"
+    "bluemap_maps_end.conf"       = "${file("${path.module}/config/end.conf")}"
   }
 }
 
@@ -103,6 +109,29 @@ resource "kubernetes_service" "minecraft" {
   }
 }
 
+resource "kubernetes_service" "bluemap" {
+  count = var.environment == "prod" ? 0 : 1
+
+  metadata {
+    name = "bluemap-${var.environment}"
+  }
+
+  spec {
+    selector = {
+      app = "minecraft-${var.environment}"
+    }
+
+    session_affinity = "ClientIP"
+    port {
+      protocol    = "TCP"
+      port        = 80
+      target_port = 8100
+    }
+    type             = "LoadBalancer"
+    load_balancer_ip = google_compute_address.minecraft.address
+  }
+}
+
 resource "kubernetes_config_map" "config" {
   metadata {
     name = "minecraft-config-${var.environment}"
@@ -126,12 +155,7 @@ resource "kubernetes_deployment" "minecraft" {
     }
 
     strategy {
-      type = "RollingUpdate"
-
-      rolling_update {
-        max_surge       = 1
-        max_unavailable = 0
-      }
+      type = "Recreate"
     }
 
     template {
@@ -179,7 +203,7 @@ resource "kubernetes_deployment" "minecraft" {
             content {
               name = "config"
 
-              mount_path = "/minecraft/config/${volume_mount.key}"
+              mount_path = "/minecraft/config/${replace(volume_mount.key, "_", "/")}"
               sub_path   = volume_mount.key
               read_only  = false
             }
