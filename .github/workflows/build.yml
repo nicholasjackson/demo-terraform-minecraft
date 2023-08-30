@@ -59,7 +59,7 @@ jobs:
           files: ./world.tar.gz
     
   test_policy:
-    name: "Test Plan Output"
+    name: "Test Terraform Configuration For Deployment"
     needs: build_world
     runs-on: ubuntu-latest
     steps:
@@ -95,7 +95,7 @@ jobs:
           policy: terraform/gcp/app/policy
 
   apply_config:
-    name: "Apply Configuration"
+    name: "Deploy Application"
     needs: test_policy
     runs-on: ubuntu-latest
     steps:

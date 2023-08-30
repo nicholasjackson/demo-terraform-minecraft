@@ -11,7 +11,7 @@ env:
 jobs:
   terraform:
     if: github.repository != 'hashicorp-education/learn-terraform-github-actions'
-    name: "Terraform Plan"
+    name: "Generate Terraform Plan and Update PR"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,7 +24,7 @@ jobs:
         run: |
           echo "Running plan for ${{ github.base_ref }}"
 
-      - name: Upload Configuration
+      - name: Upload Configuration To TFC
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
         id: plan-upload
         with:
