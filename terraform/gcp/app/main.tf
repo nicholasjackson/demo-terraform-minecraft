@@ -18,6 +18,18 @@ variable "cloudflare_zone_id" {
   default = ""
 }
 
+# locals allow functions like file to be used, variables do not
+locals {
+  config_files = {
+    "banned-ips.json"     = "${file("${path.module}/config/banned-ips.json")}"
+    "banned-players.json" = "${file("${path.module}/config/banned-players.json")}"
+    "bukkit.yml"          = "${file("${path.module}/config/bukkit.yml")}"
+    "ops.json"            = "${file("${path.module}/config/ops.json")}"
+    "usercache.json"      = "${file("${path.module}/config/usercache.json")}"
+    "whitelist.json"      = "${file("${path.module}/config/whitelist.json")}"
+  }
+}
+
 terraform {
   cloud {
     organization = "HashiCraft"
@@ -66,7 +78,7 @@ provider "kubernetes" {
 }
 
 resource "google_compute_address" "minecraft" {
-  name = "minecraft-${var.environment}"
+  name   = "minecraft-${var.environment}"
   region = var.location
 }
 
@@ -96,14 +108,7 @@ resource "kubernetes_config_map" "config" {
     name = "minecraft-config-${var.environment}"
   }
 
-  data = {
-    "banned-ips.json" = "${file("${path.module}/config/banned-ips.json")}"
-    "banned-players.json" = "${file("${path.module}/config/banned-players.json")}"
-    "bukkit.yml" = "${file("${path.module}/config/bukkit.yml")}"
-    "ops.json" = "${file("${path.module}/config/ops.json")}"
-    "usercache.json" = "${file("${path.module}/config/usercache.json")}"
-    "whitelist.json" = "${file("${path.module}/config/whitelist.json")}"
-  }
+  data = local.config_files
 }
 
 resource "kubernetes_deployment" "minecraft" {
@@ -145,24 +150,30 @@ resource "kubernetes_deployment" "minecraft" {
 
           # WORLD_CHECKSUM will force the deployment to be recreated when the world file changes
           env {
-            name = "WORLD_CHECKSUM"
+            name  = "WORLD_CHECKSUM"
             value = file("./checksum.txt")
           }
 
           env {
-            name = "MODS_BACKUP"
+            name  = "MODS_BACKUP"
             value = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/mods/mods.tar.gz"
           }
-          
+
           env {
-            name = "WORLD_BACKUP"
+            name  = "WORLD_BACKUP"
             value = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/${var.environment}/world.tar.gz"
           }
 
-          volume_mount {
-            mount_path = "/minecraft/config"
-            name = "config"
-            read_only = false
+          dynamic "volume_mount" {
+            for_each = local.config_files
+
+            content {
+              name = "config"
+
+              mount_path = "/minecraft/config/${volume_mount.key}"
+              sub_path   = volume_mount.key
+              read_only  = false
+            }
           }
         }
         volume {
@@ -170,7 +181,17 @@ resource "kubernetes_deployment" "minecraft" {
 
           config_map {
             default_mode = "0666"
-            name = kubernetes_config_map.config.metadata.0.name
+            name         = kubernetes_config_map.config.metadata.0.name
+
+            dynamic "items" {
+              for_each = local.config_files
+
+              content {
+                key  = items.key
+                path = items.key
+              }
+            }
+
           }
         }
       }
@@ -180,7 +201,7 @@ resource "kubernetes_deployment" "minecraft" {
 
 resource "cloudflare_record" "minecraft" {
   zone_id = var.cloudflare_zone_id
-  name = "minecraft-${var.environment}"
+  name    = "minecraft-${var.environment}"
   value   = google_compute_address.minecraft.address
   type    = "A"
   ttl     = 3600

@@ -1,0 +1,118 @@
+name: "Terraform Apply"
+
+on:
+  push:
+    branches:
+      - prod
+      - test
+      - dev
+
+env:
+  TF_CLOUD_ORGANIZATION: "${{ secrets.TF_CLOUD_ORG }}"
+  TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
+  CONFIG_DIRECTORY: "./terraform/gcp/app"
+
+jobs:
+  test_world:
+    name: "Test World"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
+
+      - name: Test
+        run: |
+          cd tests
+          go test -v ./...
+
+      
+
+  build_world:
+    name: "Build World"
+    needs: test_world
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build the updated world
+        run: |
+          tar -C $(pwd)/world -czf ./world.tar.gz ./
+      
+      - name: Generate the checksum
+        run: |
+          shasum -a 512 ./world.tar.gz > ./terraform/gcp/app/checksum.txt
+
+      - name: Update release
+        uses: johnwbyrd/update-release@v1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: ./world.tar.gz
+    
+  test_policy:
+    name: "Test Terraform Configuration For Deployment"
+    needs: build_world
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Upload Configuration
+        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
+        id: apply-upload
+        with:
+          workspace: app-${{ github.ref_name }}
+          directory: ${{ env.CONFIG_DIRECTORY }}
+      
+      - name: Download TFC Plan
+        run: |
+          wget  https://github.com/nicholasjackson/tfc-plan/releases/download/v0.0.3/binary-linux-amd64
+          mv ./binary-linux-amd64 /usr/local/bin/tfc-plan
+          chmod +x /usr/local/bin/tfc-plan
+
+      - name: Get Plan And Output JSON
+        id: plan-run
+        run: |
+          tfc-plan --out terraform/gcp/app/app-plan.json
+        env:
+          TFC_ORG: ${{ secrets.TF_CLOUD_ORG }} 
+          TFC_WORKSPACE: app-${{ github.ref_name }}
+          TFC_TOKEN: ${{ secrets.TF_API_TOKEN }} 
+
+      - name: Run Conftest
+        uses: instrumenta/conftest-action@master
+        with:
+          files: terraform/gcp/app/app-plan.json
+          policy: terraform/gcp/app/policy
+
+  apply_config:
+    name: "Deploy Application"
+    needs: test_policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Create Apply Run
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
+        id: apply-run
+        with:
+          workspace: app-${{ github.ref_name }}
+          configuration_version: ${{ steps.apply-upload.outputs.configuration_version_id }}
+
+      - name: Apply
+        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.0.0
+        if: fromJSON(steps.apply-run.outputs.payload).data.attributes.actions.IsConfirmable
+        id: apply
+        with:
+          run: ${{ steps.apply-run.outputs.run_id }}
+          comment: "Apply Run from GitHub Actions CI ${{ github.sha }}"
