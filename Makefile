@@ -9,6 +9,7 @@ run_local:
 		--rm \
 		-d \
 		-it \
+		--name minecraft \
 		-e "MODS_BACKUP=https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/mods/mods.tar.gz"	\
 		-e "GAME_MODE=creative" \
 		-e "WHITELIST_ENABLED=false" \
@@ -19,7 +20,10 @@ run_local:
 		-p 9090:9090 \
 		hashicraft/minecraft:v1.20.1-fabric
 
-run_tests:
+stop_local:
+	docker stop minecraft
+
+run_conftest:
 	cd ./terraform/gcp/app && \
 	tfc-plan --out app-plan.json && \
 	conftest test ./app-plan.json
