@@ -128,7 +128,7 @@ resource "kubernetes_deployment" "minecraft" {
     selector {
       type = "RollingUpdate"
 
-      rolling_update = {
+      rolling_update {
         max_surge       = 1
         max_unavailable = 0
       }
