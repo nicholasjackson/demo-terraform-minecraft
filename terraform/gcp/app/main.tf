@@ -125,6 +125,15 @@ resource "kubernetes_deployment" "minecraft" {
       }
     }
 
+    strategy {
+      type = "RollingUpdate"
+
+      rolling_update {
+        max_surge       = 1
+        max_unavailable = 0
+      }
+    }
+
     template {
       metadata {
         labels = {
