@@ -125,7 +125,7 @@ resource "kubernetes_deployment" "minecraft" {
       }
     }
 
-    selector {
+    strategy {
       type = "RollingUpdate"
 
       rolling_update {
