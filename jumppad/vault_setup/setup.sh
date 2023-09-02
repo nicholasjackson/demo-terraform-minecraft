@@ -27,4 +27,4 @@ vault policy write admin admin.hcl
 
 # Create a user login
 # When running in debug mode the user is not authenticted and is randomly generated every time
-vault write "auth/userpass/users/Player844" password="bd0d6de2-7897-388f-8c0f-71e10002b81c" policies="user,admin"
+vault write "auth/userpass/users/SheriffJackson" password="642bf65a-0f3a-4c23-ac62-fefcb5fc420d" policies="user,admin"

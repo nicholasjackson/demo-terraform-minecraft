@@ -3,6 +3,10 @@ resource "container" "minecraft" {
     name = "hashicraft/minecraft:v1.20.1-fabric"
   }
 
+  network {
+    id         = resource.network.local.id
+  }
+
   # Minecraft
   port {
     remote = 25565
