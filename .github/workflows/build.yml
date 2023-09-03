@@ -64,7 +64,6 @@ jobs:
     name: "Deploy Application"
     needs: 
       - build_world
-      - test_policy
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
