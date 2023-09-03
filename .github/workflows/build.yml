@@ -78,6 +78,13 @@ jobs:
           wget  https://github.com/nicholasjackson/tfc-plan/releases/download/v0.0.3/binary-linux-amd64
           mv ./binary-linux-amd64 /usr/local/bin/tfc-plan
           chmod +x /usr/local/bin/tfc-plan
+        
+      - name: Download Conftest
+        run: |
+          LATEST_VERSION=$(wget -O - "https://api.github.com/repos/open-policy-agent/conftest/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | cut -c 2-)
+          wget "https://github.com/open-policy-agent/conftest/releases/download/v${LATEST_VERSION}/conftest_${LATEST_VERSION}_Linux_x86_64.tar.gz"
+          tar xzf conftest_${LATEST_VERSION}_Linux_x86_64.tar.gz
+          sudo mv conftest /usr/local/bin
 
       - name: Get Plan And Output JSON
         id: plan-run
@@ -89,10 +96,7 @@ jobs:
           TFC_TOKEN: ${{ secrets.TF_API_TOKEN }} 
 
       - name: Run Conftest
-        uses: instrumenta/conftest-action@master
-        with:
-          files: terraform/gcp/app/app-plan.json
-          policy: terraform/gcp/app/policy
+          conftest test -p terraform/gcp/app/policy terraform/gcp/app/app-plan.json
 
   apply_config:
     name: "Deploy Application"
