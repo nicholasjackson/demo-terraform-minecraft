@@ -1,52 +1,3 @@
-resource "google_compute_address" "minecraft" {
-  name   = "minecraft-${var.environment}"
-  region = var.location
-}
-
-resource "kubernetes_service" "minecraft" {
-  metadata {
-    name = "minecraft-${var.environment}"
-  }
-
-  spec {
-    selector = {
-      app = "minecraft-${var.environment}"
-    }
-
-    session_affinity = "ClientIP"
-    port {
-      protocol    = "TCP"
-      port        = 25565
-      target_port = 25565
-    }
-    type             = "LoadBalancer"
-    load_balancer_ip = google_compute_address.minecraft.address
-  }
-}
-
-resource "kubernetes_service" "bluemap" {
-  count = var.environment == "prod" ? 0 : 1
-
-  metadata {
-    name = "bluemap-${var.environment}"
-  }
-
-  spec {
-    selector = {
-      app = "minecraft-${var.environment}"
-    }
-
-    session_affinity = "ClientIP"
-    port {
-      protocol    = "TCP"
-      port        = 80
-      target_port = 8100
-    }
-    type             = "LoadBalancer"
-    load_balancer_ip = google_compute_address.minecraft.address
-  }
-}
-
 resource "kubernetes_config_map" "config" {
   metadata {
     name = "minecraft-config-${var.environment}"
@@ -96,7 +47,6 @@ resource "kubernetes_deployment" "minecraft" {
             }
           }
 
-          # WORLD_CHECKSUM will force the deployment to be recreated when the world file changes
           env {
             name  = "WORLD_CHECKSUM"
             value = file("./checksum.txt")
@@ -121,7 +71,7 @@ resource "kubernetes_deployment" "minecraft" {
             name  = "VAULT_TOKEN"
             value = data.terraform_remote_state.hcp.outputs.vault_admin_token
           }
-         
+
           env {
             name  = "VAULT_NAMESPACE"
             value = "admin"
@@ -154,6 +104,8 @@ resource "kubernetes_deployment" "minecraft" {
             }
           }
         }
+
+
         volume {
           name = "config"
 
@@ -174,6 +126,55 @@ resource "kubernetes_deployment" "minecraft" {
         }
       }
     }
+  }
+}
+
+resource "google_compute_address" "minecraft" {
+  name   = "minecraft-${var.environment}"
+  region = var.location
+}
+
+resource "kubernetes_service" "minecraft" {
+  metadata {
+    name = "minecraft-${var.environment}"
+  }
+
+  spec {
+    selector = {
+      app = "minecraft-${var.environment}"
+    }
+
+    session_affinity = "ClientIP"
+    port {
+      protocol    = "TCP"
+      port        = 25565
+      target_port = 25565
+    }
+    type             = "LoadBalancer"
+    load_balancer_ip = google_compute_address.minecraft.address
+  }
+}
+
+resource "kubernetes_service" "bluemap" {
+  count = var.environment == "prod" ? 0 : 1
+
+  metadata {
+    name = "bluemap-${var.environment}"
+  }
+
+  spec {
+    selector = {
+      app = "minecraft-${var.environment}"
+    }
+
+    session_affinity = "ClientIP"
+    port {
+      protocol    = "TCP"
+      port        = 80
+      target_port = 8100
+    }
+    type             = "LoadBalancer"
+    load_balancer_ip = google_compute_address.minecraft.address
   }
 }
 
