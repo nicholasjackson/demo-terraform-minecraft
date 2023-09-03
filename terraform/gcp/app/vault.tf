@@ -13,37 +13,37 @@ data "terraform_remote_state" "hcp" {
 provider "vault" {
   # Configuration options
   address = data.terraform_remote_state.hcp.outputs.vault_public_addr
-  token = data.terraform_remote_state.hcp.outputs.vault_admin_token
+  token   = data.terraform_remote_state.hcp.outputs.vault_admin_token
 }
 
 # Create a KV Version 2 secret engine mount for the environment
 resource "vault_mount" "kvv2" {
-  path        = "secrets_${var.environment}/"
+  path        = "secrets_${var.environment}"
   type        = "kv"
   options     = { version = "2" }
   description = "KV Version 2 secret engine mount"
 }
 
 resource "vault_kv_secret_v2" "admin_key" {
-  mount                      = vault_mount.kvv2.path
-  name                       = "admin"
-  cas                        = 1
-  delete_all_versions        = true
-  data_json                  = jsonencode(
+  mount               = vault_mount.kvv2.path
+  name                = "admin"
+  cas                 = 1
+  delete_all_versions = true
+  data_json = jsonencode(
     {
-      key       = var.lock_keys.admin,
+      key = var.lock_keys.admin,
     }
   )
 }
 
 resource "vault_kv_secret_v2" "vault_key" {
-  mount                      = vault_mount.kvv2.path
-  name                       = "vault"
-  cas                        = 1
-  delete_all_versions        = true
-  data_json                  = jsonencode(
+  mount               = vault_mount.kvv2.path
+  name                = "vault"
+  cas                 = 1
+  delete_all_versions = true
+  data_json = jsonencode(
     {
-      key       = var.lock_keys.vault,
+      key = var.lock_keys.vault,
     }
   )
 }
@@ -78,7 +78,7 @@ resource "vault_auth_backend" "userpass" {
 resource "vault_generic_endpoint" "admin_users" {
   for_each = var.minecraft_admins
 
-  path                 = "auth/${vault_auth_backend.userpass.path}/users/${each.key}"
+  path = "auth/${vault_auth_backend.userpass.path}/users/${each.key}"
 
   data_json = <<-EOT
   {
