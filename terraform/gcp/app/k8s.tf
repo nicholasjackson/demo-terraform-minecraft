@@ -121,6 +121,11 @@ resource "kubernetes_deployment" "minecraft" {
             name  = "VAULT_TOKEN"
             value = data.terraform_remote_state.hcp.outputs.vault_admin_token
           }
+         
+          env {
+            name  = "VAULT_NAMESPACE"
+            value = "admin"
+          }
 
           env {
             name  = "HASHICRAFT_env"
