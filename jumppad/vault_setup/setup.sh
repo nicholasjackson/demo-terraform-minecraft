@@ -4,8 +4,8 @@
 vault auth enable userpass
 
 # Create the example secrets
-vault kv put secret/vault key="myvaultkey"
-vault kv put secret/admin key="myadminkey"
+vault kv put secret/vault_local key="myvaultkey"
+vault kv put secret/admin_local key="myadminkey"
 
 # Create a policy for the user
 cat <<EOF > user.hcl
