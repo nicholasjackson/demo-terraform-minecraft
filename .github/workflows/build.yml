@@ -84,7 +84,7 @@ jobs:
         run: |
           LATEST_VERSION=$(wget -O - "https://api.github.com/repos/open-policy-agent/conftest/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | cut -c 2-)
           wget "https://github.com/open-policy-agent/conftest/releases/download/vLATEST_VERSION/conftest_LATEST_VERSION_Linux_x86_64.tar.gz"
-          tar xzf conftest_LATEST_VERSION_Linux_x86_64.tar.gz
+          tar xzf conftest_$LATEST_VERSION_Linux_x86_64.tar.gz
           sudo mv conftest /usr/local/bin
   
       - name: Get Plan And Output JSON
