@@ -48,19 +48,23 @@ jobs:
         run: |
           tar -C $(pwd)/world -czf ./world.tar.gz ./
       
-      - name: Generate the checksum
-        run: |
-          shasum -a 512 ./world.tar.gz > ./terraform/gcp/app/checksum.txt
-
       - name: Update release
         uses: johnwbyrd/update-release@v1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: ./world.tar.gz
+      
+      - name: Generate the checksum
+        run: |
+          shasum -a 512 ./world.tar.gz > ./terraform/gcp/app/checksum.txt
+          echo "checksum=$(cat ./terraform/gcp/app/checksum.txt)" >> "$GITHUB_OUTPUT"
+
+    outputs:
+      world_checksum: ${{ steps.update_release.outputs.checksum }} 
+        
     
   test_policy:
     name: "Test Terraform Configuration For Deployment"
-    needs: build_world
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -101,11 +105,17 @@ jobs:
 
   apply_config:
     name: "Deploy Application"
-    needs: test_policy
+    needs: 
+      - build_world
+      - test_policy
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Create the World checksum
+        run: |
+          echo "${{needs.build_world.outputs.world_checksum}}" >> ./terraform/gcp/app/checksum.txt
 
       - name: Create Apply Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
