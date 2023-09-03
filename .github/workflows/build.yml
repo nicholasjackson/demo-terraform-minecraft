@@ -57,8 +57,7 @@ jobs:
       - name: Generate the checksum
         id: checksum
         run: |
-          shasum -a 512 ./world.tar.gz > ./terraform/gcp/app/checksum.txt
-          echo "checksum=$(cat ./terraform/gcp/app/checksum.txt)" >> "$GITHUB_OUTPUT"
+          echo "checksum=$(shasum -a 512 ./world.tar.gz)" >> "$GITHUB_OUTPUT"
 
     outputs:
       world_checksum: ${{ steps.checksum.outputs.checksum }} 
@@ -116,7 +115,7 @@ jobs:
 
       - name: Create the World checksum
         run: |
-          echo "${{needs.build_world.outputs.world_checksum}}" >> ./terraform/gcp/app/checksum.txt
+          echo "${{needs.build_world.outputs.world_checksum}}" >> ${{ env.CONFIG_DIRECTORY }}/checksum.txt
       
       - name: Upload Configuration
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
