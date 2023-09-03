@@ -38,6 +38,7 @@ resource "container" "minecraft" {
     SPAWN_NPCS        = "true"
     VAULT_ADDR        = "http://vault.container.jumppad.dev:8200"
     VAULT_TOKEN       = variable.vault_root_token
+    HASHICRAFT_env    = "local"
   }
 
   volume {

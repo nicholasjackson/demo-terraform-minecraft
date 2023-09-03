@@ -9,7 +9,7 @@ vault kv put secret/admin key="myadminkey"
 
 # Create a policy for the user
 cat <<EOF > user.hcl
-path "secret/data/vault" {
+path "secret/data/vault_local" {
   capabilities = ["read"]
 }
 EOF
@@ -18,7 +18,7 @@ vault policy write user user.hcl
 
 # Create the admin policy
 cat <<EOF > admin.hcl
-path "secret/data/admin" {
+path "secret/data/admin_local" {
   capabilities = ["read"]
 }
 EOF
