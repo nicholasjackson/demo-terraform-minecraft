@@ -117,6 +117,13 @@ jobs:
       - name: Create the World checksum
         run: |
           echo "${{needs.build_world.outputs.world_checksum}}" >> ./terraform/gcp/app/checksum.txt
+      
+      - name: Upload Configuration
+        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
+        id: apply-upload
+        with:
+          workspace: app-${{ github.ref_name }}
+          directory: ${{ env.CONFIG_DIRECTORY }}
 
       - name: Create Apply Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
