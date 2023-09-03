@@ -5,7 +5,6 @@ deployments := [deploy |
   deploy.type == "kubernetes_deployment"
   deploy.name == "minecraft"
 ]
-  
 
 deny[msg] {
   count(deployments) != 1
