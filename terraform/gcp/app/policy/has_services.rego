@@ -1,6 +1,9 @@
 package main
 
-environment := input.planned_values.variables.environment.value
+import future.keywords.if
+
+
+environment := input.variables.environment.value
 
 services := [serv |
   serv := input.planned_values.root_module.resources[_]
@@ -18,6 +21,7 @@ bluemap_port := [port |
 ]
 
 deny[msg] {
+  count(minecraft_port) != 1
   msg := sprintf("there should be a public service for minecraft with a port 25565: %v",[minecraft_port])
 }
 
@@ -26,17 +30,25 @@ deny[msg] {
   msg := sprintf("the minecraft protocol should be set to TCP: %v",[minecraft_port])
 }
 
-# bluemap should only be created when not production
-deny[msg] {
-  # if there are not exactly 1 bluemap services and the environment is not production, fail
-  # this test will be skipped when the environment is production
-  count(minecraft_port) != 1 and environment == "production"
-  msg := sprintf("there should be a public service for the bluemap server with a port 80: %v",[bluemap_port])
+# if the environment is production there should be no bluemap service
+# this will effectively skip the test when the environment is production
+fail_bluemap_port := true if {
+  environment != "prod"
+  count(bluemap_port) != 1
 }
 
 deny[msg] {
-  count(minecraft_port) != 1 and environment == "production"
+  #print("environment:", check_bluemap_port)
+  fail_bluemap_port
+  msg := sprintf("there should be a public service for the bluemap server with a port 80 when the environment '%s' is not 'prod': %v %s",[environment, bluemap_port])
+}
 
+fail_bluemap_protocol := true if {
+  environment != "prod"
   bluemap_port[0].protocol != "TCP"
-  msg := sprintf("the bluemap protocol should be set to TCP: %v",[bluemap_port_port])
+}
+
+deny[msg] {
+  fail_bluemap_protocol
+  msg := sprintf("the bluemap protocol should be set to TCP when the environment '%s' is not 'prod': %v",[environment, bluemap_port])
 }
