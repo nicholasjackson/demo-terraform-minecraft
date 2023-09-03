@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"testing"
+	"os"
 
 	"github.com/stretchr/testify/require"
 )
@@ -11,10 +13,17 @@ func TestMain(m *testing.M) {
 	// start a docker container
 	startContainer()
 
-	// wait for the server to start
-	waitForServer()
+	// stop the docker container after the tests
+	defer stopContainer()
 
-	// if a test panics cath the panic and fail the test
+	// wait for the server to start
+	err := waitForServer()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	// if a test panics catch the panic and fail the test
 	defer func() {
 		if r := recover(); r != nil {
 			stopContainer()
@@ -25,8 +34,6 @@ func TestMain(m *testing.M) {
 	// run the sub tests
 	m.Run()
 
-	// stop the docker container after the tests
-	stopContainer()
 }
 
 // test that the comparitor exists
