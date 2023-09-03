@@ -55,12 +55,13 @@ jobs:
           files: ./world.tar.gz
       
       - name: Generate the checksum
+        id: checksum
         run: |
           shasum -a 512 ./world.tar.gz > ./terraform/gcp/app/checksum.txt
           echo "checksum=$(cat ./terraform/gcp/app/checksum.txt)" >> "$GITHUB_OUTPUT"
 
     outputs:
-      world_checksum: ${{ steps.update_release.outputs.checksum }} 
+      world_checksum: ${{ steps.checksum.outputs.checksum }} 
         
     
   test_policy:
