@@ -96,6 +96,7 @@ jobs:
           TFC_TOKEN: ${{ secrets.TF_API_TOKEN }} 
 
       - name: Run Conftest
+        run: |
           conftest test -p terraform/gcp/app/policy terraform/gcp/app/app-plan.json
 
   apply_config:
