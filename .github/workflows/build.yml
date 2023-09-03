@@ -48,19 +48,23 @@ jobs:
         run: |
           tar -C $(pwd)/world -czf ./world.tar.gz ./
       
-      - name: Generate the checksum
-        run: |
-          shasum -a 512 ./world.tar.gz > ./terraform/gcp/app/checksum.txt
-
       - name: Update release
         uses: johnwbyrd/update-release@v1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: ./world.tar.gz
+      
+      - name: Generate the checksum
+        id: checksum
+        run: |
+          echo "checksum=$(shasum -a 512 ./world.tar.gz)" >> "$GITHUB_OUTPUT"
+
+    outputs:
+      world_checksum: ${{ steps.checksum.outputs.checksum }} 
+        
     
   test_policy:
     name: "Test Terraform Configuration For Deployment"
-    needs: build_world
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -78,6 +82,13 @@ jobs:
           wget  https://github.com/nicholasjackson/tfc-plan/releases/download/v0.0.3/binary-linux-amd64
           mv ./binary-linux-amd64 /usr/local/bin/tfc-plan
           chmod +x /usr/local/bin/tfc-plan
+        
+      - name: Download Conftest
+        run: |
+          LATEST_VERSION=$(wget -O - "https://api.github.com/repos/open-policy-agent/conftest/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | cut -c 2-)
+          wget "https://github.com/open-policy-agent/conftest/releases/download/v${LATEST_VERSION}/conftest_${LATEST_VERSION}_Linux_x86_64.tar.gz"
+          tar xzf conftest_${LATEST_VERSION}_Linux_x86_64.tar.gz
+          sudo mv conftest /usr/local/bin
 
       - name: Get Plan And Output JSON
         id: plan-run
@@ -89,18 +100,29 @@ jobs:
           TFC_TOKEN: ${{ secrets.TF_API_TOKEN }} 
 
       - name: Run Conftest
-        uses: instrumenta/conftest-action@master
-        with:
-          files: terraform/gcp/app/app-plan.json
-          policy: terraform/gcp/app/policy
+        run: |
+          conftest test -p terraform/gcp/app/policy terraform/gcp/app/app-plan.json
 
   apply_config:
     name: "Deploy Application"
-    needs: test_policy
+    needs: 
+      - build_world
+      - test_policy
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Create the World checksum
+        run: |
+          echo "${{needs.build_world.outputs.world_checksum}}" >> ${{ env.CONFIG_DIRECTORY }}/checksum.txt
+      
+      - name: Upload Configuration
+        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
+        id: apply-upload
+        with:
+          workspace: app-${{ github.ref_name }}
+          directory: ${{ env.CONFIG_DIRECTORY }}
 
       - name: Create Apply Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0

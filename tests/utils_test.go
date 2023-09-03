@@ -51,14 +51,14 @@ func stopContainer() {
 }
 
 // wait for the server to start
-func waitForServer() {
+func waitForServer() error {
 	// wait for the server to start
 	for i := 0; i < 120; i++ {
 		// try to connect to the servers http health check endpoint
 		req, err := http.Get("http://localhost:9090/v1/health")
 		if err == nil && req.StatusCode == http.StatusOK {
 			// server is up
-			return
+			return nil
 		}
 
 		// wait and check later
@@ -66,8 +66,7 @@ func waitForServer() {
 	}
 
 	// server is not up
-	fmt.Println("timeout waiting for server to start")
-	os.Exit(1)
+	return fmt.Errorf("timeout waiting for server to start")
 }
 
 // block is a struct that represents a block in the world, it is used to unmarshal the JSON response
