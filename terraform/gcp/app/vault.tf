@@ -77,7 +77,7 @@ resource "vault_auth_backend" "userpass" {
 # Create user accounts for Admins
 resource "vault_generic_endpoint" "admin_users" {
   lifecycle {
-    ignore_changes = [ "data_json" ]
+    ignore_changes = [ data_json ]
   }
 
   for_each = var.minecraft_admins
