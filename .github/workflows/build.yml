@@ -66,7 +66,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-  
+
       - name: Upload Configuration
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
         id: apply-upload
@@ -83,10 +83,10 @@ jobs:
       - name: Download Conftest
         run: |
           LATEST_VERSION=$(wget -O - "https://api.github.com/repos/open-policy-agent/conftest/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | cut -c 2-)
-          wget "https://github.com/open-policy-agent/conftest/releases/download/vLATEST_VERSION/conftest_LATEST_VERSION_Linux_x86_64.tar.gz"
-          tar xzf conftest_$LATEST_VERSION_Linux_x86_64.tar.gz
+          wget "https://github.com/open-policy-agent/conftest/releases/download/v${LATEST_VERSION}/conftest_${LATEST_VERSION}_Linux_x86_64.tar.gz"
+          tar xzf conftest_${LATEST_VERSION}_Linux_x86_64.tar.gz
           sudo mv conftest /usr/local/bin
-  
+
       - name: Get Plan And Output JSON
         id: plan-run
         run: |
@@ -95,7 +95,7 @@ jobs:
           TFC_ORG: ${{ secrets.TF_CLOUD_ORG }} 
           TFC_WORKSPACE: app-${{ github.ref_name }}
           TFC_TOKEN: ${{ secrets.TF_API_TOKEN }} 
-  
+
       - name: Run Conftest
         run: |
           conftest test -p terraform/gcp/app/policy terraform/gcp/app/app-plan.json
