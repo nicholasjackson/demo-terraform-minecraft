@@ -22,6 +22,11 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 4.0"
     }
+
+    hcp = {
+      source  = "hashicorp/hcp"
+      version = "~> 0.69.0"
+    }
   }
 }
 
@@ -44,3 +49,11 @@ provider "kubernetes" {
     data.google_container_cluster.my_cluster.master_auth[0].cluster_ca_certificate,
   )
 }
+
+
+
+
+
+
+
+

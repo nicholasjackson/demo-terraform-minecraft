@@ -45,3 +45,11 @@ func TestComparitorExists(t *testing.T) {
 	// check that the block material is a comparitor
 	require.Equal(t, "minecraft:comparator", block.Material)
 }
+
+func TestPowererdRailExists(t*testing.T) {
+	block, err := getBlock(172, -8, 1081)
+	require.NoError(t, err)
+
+	// check that the block material is a comparitor
+	require.Equal(t, "minecraft:powered_rail", block.Material)
+}

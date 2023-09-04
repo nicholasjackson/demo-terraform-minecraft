@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minecraft-dev
+data:
+  banned-ips.json: |
+    []
+  banned-players.json: |
+    []
+  bukkit.yaml: |
+    settings:
+      allow-end: true
+      warn-on-overload: true
+  ops.json: |
+    [
+      {
+        "uuid": "642bf65a-0f3a-4c23-ac62-fefcb5fc420d",
+        "name": "SheriffJackson",
+        "level": 4,
+        "bypassesPlayerLimit": false
+      }
+    ]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minecraft-dev
+  labels:
+    app: minecraft-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minecraft-dev
+  template:
+    metadata:
+      labels:
+        app: minecraft-dev
+    spec:
+      containers:
+      - name: minecraft
+        image: hashicraft/minecraft:1.20.1-fabric
+        ports:
+        - containerPort: 25565
+        env:
+          - name: WORLD_CHECKSUM
+            value: "sha256:0f3a4c23ac62fefcb5fc420d642bf65a"
+          - name: MODS_BACKUP
+            value: "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/mods/mods.tar.gz"
+          - name: WORLD_BACKUP
+            value: "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/${var.environment}/world.tar.gz"
+        volumeMounts:
+        - name: config
+          mountPath: /minecraft/config/banned-ips.json
+          subPath: banned-ips.json
+          readOnly: false
+        - name: config
+          mountPath: /minecraft/config/banned-players.json
+          subPath: banned-players.json
+          readOnly: false
+        - name: config
+          mountPath: /minecraft/config/bukkit.yaml
+          subPath: bukkit.yaml
+          readOnly: false
+      volume:
+      - name: config
+        configMap:
+          name: minecraft-dev
+          items:
+            - key: banned-ips.json
+              path: banned-ips.json
+            - key: banned-players.json
+              path: banned-players.json
+            - key: bukkit.yaml
+              path: bukkit.yaml
