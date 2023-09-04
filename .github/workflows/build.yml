@@ -34,7 +34,9 @@ jobs:
   
   build_world:
     name: "Build World"
-    needs: test_world
+    needs: 
+      - test_world
+      - test_policy
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -102,9 +104,7 @@ jobs:
 
   apply_config:
     name: "Deploy Application"
-    needs: 
-      - build_world
-      - test_policy
+    needs: build_world
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

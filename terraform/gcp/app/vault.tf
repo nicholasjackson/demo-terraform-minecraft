@@ -10,14 +10,10 @@ data "terraform_remote_state" "hcp" {
   }
 }
 
-resource "hcp_vault_cluster_admin_token" "admin" {
-  cluster_id = data.terraform_remote_state.hcp.outputs.vault_cluster_id
-}
-
 provider "vault" {
   # Configuration options
   address = data.terraform_remote_state.hcp.outputs.vault_public_addr
-  token   = hcp_vault_cluster_admin_token.admin.token
+  token   = data.terraform_remote_state.hcp.outputs.vault_admin_token
 }
 
 # Create a KV Version 2 secret engine mount for the environment
