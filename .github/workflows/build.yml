@@ -63,7 +63,7 @@ jobs:
       world_checksum: ${{ steps.checksum.outputs.checksum }} 
 
   test_policy:
-    name: "Test Terraform Configuration For Deployment"
+    name: "Test Terraform Configuration for Deployment"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
