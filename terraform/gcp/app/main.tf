@@ -22,11 +22,6 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 4.0"
     }
-
-    hcp = {
-      source  = "hashicorp/hcp"
-      version = "~> 0.69.0"
-    }
   }
 }
 

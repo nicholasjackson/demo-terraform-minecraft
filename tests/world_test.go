@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"testing"
 	"os"
+	"testing"
 
 	"github.com/stretchr/testify/require"
 )
@@ -46,10 +46,9 @@ func TestComparitorExists(t *testing.T) {
 	require.Equal(t, "minecraft:comparator", block.Material)
 }
 
-func TestPowererdRailExists(t*testing.T) {
+func TestPoweredRailExists(t *testing.T) {
 	block, err := getBlock(172, -8, 1081)
 	require.NoError(t, err)
 
-	// check that the block material is a comparitor
 	require.Equal(t, "minecraft:powered_rail", block.Material)
 }

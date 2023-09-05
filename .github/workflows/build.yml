@@ -31,39 +31,9 @@ jobs:
         run: |
           cd tests
           go test -v ./...
-  
-  build_world:
-    name: "Build World"
-    needs: 
-      - test_world
-      - test_policy
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-  
-      - name: Build the updated world
-        run: |
-          tar -C $(pwd)/world -czf ./world.tar.gz ./
-      
-      - name: Update release
-        uses: johnwbyrd/update-release@v1.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          files: ./world.tar.gz
-      
-      - name: Generate the checksum
-        id: checksum
-        run: |
-          echo "checksum=$(shasum -a 512 ./world.tar.gz)" >> "GITHUB_OUTPUT"
-  
-    outputs:
-      world_checksum: ${{ steps.checksum.outputs.checksum }} 
 
   test_policy:
-    name: "Test Terraform Configuration for Deployment"
+    name: "Test Terraform Configuration For Deployment"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -101,6 +71,36 @@ jobs:
       - name: Run Conftest
         run: |
           conftest test -p terraform/gcp/app/policy terraform/gcp/app/app-plan.json
+
+  build_world:
+    name: "Build World"
+    needs: 
+      - test_world
+      - test_policy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+  
+      - name: Build the updated world
+        run: |
+          tar -C $(pwd)/world -czf ./world.tar.gz ./
+      
+      - name: Update release
+        uses: johnwbyrd/update-release@v1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: ./world.tar.gz
+      
+      - name: Generate the checksum
+        id: checksum
+        run: |
+          echo "checksum=$(shasum -a 512 ./world.tar.gz)" >> "GITHUB_OUTPUT"
+  
+    outputs:
+      world_checksum: ${{ steps.checksum.outputs.checksum }} 
 
   apply_config:
     name: "Deploy Application"
