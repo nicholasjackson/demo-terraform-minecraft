@@ -1,52 +1,32 @@
-# Conftest
+# Demo Terraform Minecraft
 
-[![Go Report Card](https://goreportcard.com/badge/open-policy-agent/opa)](https://goreportcard.com/report/open-policy-agent/conftest) [![Netlify](https://api.netlify.com/api/v1/badges/2d928746-3380-4123-b0eb-1fd74ba390db/deploy-status)](https://app.netlify.com/sites/vibrant-villani-65041c/deploys)
+This repository shows how to use a Github actions based workflow to test and apply Terraform
+using a branch based methodology.
 
-Conftest helps you write tests against structured configuration data. Using Conftest you can
-write tests for your Kubernetes configuration, Tekton pipeline definitions, Terraform code,
-Serverless configs or any other config files.
+## Strucuture
 
-Conftest uses the Rego language from [Open Policy Agent](https://www.openpolicyagent.org/) for writing
-the assertions. You can read more about Rego in [How do I write policies](https://www.openpolicyagent.org/docs/how-do-i-write-policies.html)
-in the Open Policy Agent documentation.
+### Github Actions
 
-Here's a quick example. Save the following as `policy/deployment.rego`:
+**.github/workflows/build.yml**  
+Example GitHub action which uses an API driven workflow with Terraform cloud
+to build and test an application, test the Terraform configuration for deployment.
+And finally deploy the application using Terraform Cloud.
 
-```rego
-package main
+**github/workflows/pr.yml**  
+Example GitHub action that uses a Terraform cloud API driven workflow to 
+run a speculative plan for the to be merged configuration. The action 
+reports changes to the PR and links to the Terraform cloud plan for further 
+info.
 
-deny[msg] {
-  input.kind == "Deployment"
-  not input.spec.template.spec.securityContext.runAsNonRoot
+## Terraform
 
-  msg := "Containers must not run as root"
-}
+**terraform/hcp**  
+Example Terraform that creates a Vault cluster using HashiCorp cloud.
 
-deny[msg] {
-  input.kind == "Deployment"
-  not input.spec.selector.matchLabels.app
+**terraform/gcp/core**  
+Example Terraform to create a Kubernetes cluster in GCP along with a public
+service to enable access.
 
-  msg := "Containers must provide app label for pod selectors"
-}
-```
-
-Assuming you have a Kubernetes deployment in `deployment.yaml` you can run Conftest like so:
-
-```console
-$ conftest test deployment.yaml
-FAIL - deployment.yaml - Containers must not run as root
-FAIL - deployment.yaml - Containers must provide app label for pod selectors
-
-2 tests, 0 passed, 0 warnings, 2 failures, 0 exceptions
-```
-
-Conftest isn't specific to Kubernetes. It will happily let you write tests for any configuration files in a variety of different formats. See the [documentation](https://www.conftest.dev/) for [installation instructions](https://www.conftest.dev/install/) and
-more details about the features.
-
-## Want to contribute to Conftest?
-
-* See [DEVELOPMENT.md](DEVELOPMENT.md) to build and test Conftest itself.
-* See [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
-
-For discussions and questions join us on the [Open Policy Agent Slack](https://slack.openpolicyagent.org/)
-in the `#opa-conftest` channel.
+**terraform/gcp/app**
+Example application that uses Terraform to deploy a Minecraft server to Kubernetes.
+The configuration also configures userpass and secrets in Vault.
