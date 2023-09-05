@@ -1,4 +1,12 @@
 {
+	"23_rail": {
+		"prefix": "23_rail",
+		"description": "",
+		"scope": "",
+		"body": [
+			"172,-8,1081"
+		]
+	},
 	"22_test_update": {
 		"prefix": "22_test_update",
 		"description": "",

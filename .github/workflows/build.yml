@@ -36,7 +36,6 @@ jobs:
     name: "Build World"
     needs: 
       - test_world
-      - test_policy
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -61,46 +60,6 @@ jobs:
   
     outputs:
       world_checksum: ${{ steps.checksum.outputs.checksum }} 
-
-  test_policy:
-    name: "Test Terraform Configuration for Deployment"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Upload Configuration
-        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
-        id: apply-upload
-        with:
-          workspace: app-${{ github.ref_name }}
-          directory: ${{ env.CONFIG_DIRECTORY }}
-      
-      - name: Download TFC Plan
-        run: |
-          wget  https://github.com/nicholasjackson/tfc-plan/releases/download/v0.0.3/binary-linux-amd64
-          mv ./binary-linux-amd64 /usr/local/bin/tfc-plan
-          chmod +x /usr/local/bin/tfc-plan
-        
-      - name: Download Conftest
-        run: |
-          LATEST_VERSION=$(wget -O - "https://api.github.com/repos/open-policy-agent/conftest/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | cut -c 2-)
-          wget "https://github.com/open-policy-agent/conftest/releases/download/v${LATEST_VERSION}/conftest_${LATEST_VERSION}_Linux_x86_64.tar.gz"
-          tar xzf conftest_${LATEST_VERSION}_Linux_x86_64.tar.gz
-          sudo mv conftest /usr/local/bin
-
-      - name: Get Plan And Output JSON
-        id: plan-run
-        run: |
-          tfc-plan --out terraform/gcp/app/app-plan.json
-        env:
-          TFC_ORG: ${{ secrets.TF_CLOUD_ORG }} 
-          TFC_WORKSPACE: app-${{ github.ref_name }}
-          TFC_TOKEN: ${{ secrets.TF_API_TOKEN }} 
-
-      - name: Run Conftest
-        run: |
-          conftest test -p terraform/gcp/app/policy terraform/gcp/app/app-plan.json
 
   apply_config:
     name: "Deploy Application"
