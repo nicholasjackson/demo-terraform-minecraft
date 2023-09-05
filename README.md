@@ -27,6 +27,6 @@ Example Terraform that creates a Vault cluster using HashiCorp cloud.
 Example Terraform to create a Kubernetes cluster in GCP along with a public
 service to enable access.
 
-**terraform/gcp/app**
+**terraform/gcp/app**  
 Example application that uses Terraform to deploy a Minecraft server to Kubernetes.
 The configuration also configures userpass and secrets in Vault.
