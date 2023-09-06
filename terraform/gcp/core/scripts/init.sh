@@ -40,6 +40,6 @@ ExecStart=/usr/bin/boundary server -config="/etc/boundary/config.hcl"
 WantedBy=multi-user.target
 EOF
 
-systemctl daemon-reload
 systemctl enable /etc/systemd/system/boundary_worker.service
+systemctl daemon-reload
 systemctl start boundary_worker
