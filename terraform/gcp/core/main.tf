@@ -10,6 +10,17 @@ variable "cluster" {
   default = ""
 }
 
+data "terraform_remote_state" "hcp" {
+  backend = "remote"
+
+  config = {
+    organization = "HashiCraft"
+    workspaces = {
+      name = "HCP"
+    }
+  }
+}
+
 terraform {
   cloud {
     organization = "HashiCraft"
