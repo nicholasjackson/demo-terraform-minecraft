@@ -38,7 +38,13 @@ resource "google_compute_instance" "boundary" {
     foo = "bar"
   }
 
-  metadata_startup_script = templatefile("./scripts/init.sh",{cluster_id=data.terraform_remote_state.hcp.outputs.boundary_cluster_id,worker_token=boundary_worker.controller_led.controller_generated_activation_token})
+  metadata_startup_script = templatefile(
+    "./scripts/init.sh",
+    {
+      cluster_id   =  replace(replace(data.terraform_remote_state.hcp.outputs.boundary_cluster_url,"https://",""), ".boundary.hashicorp.cloud","")
+      worker_token = boundary_worker.controller_led.controller_generated_activation_token
+    }
+  )
 
   service_account {
     # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
