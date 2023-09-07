@@ -1,20 +1,3 @@
-# Fetch the Vault address and token from the HCP workspace remote state
-data "terraform_remote_state" "hcp" {
-  backend = "remote"
-
-  config = {
-    organization = "HashiCraft"
-    workspaces = {
-      name = "HCP"
-    }
-  }
-}
-
-provider "vault" {
-  # Configuration options
-  address = data.terraform_remote_state.hcp.outputs.vault_public_addr
-  token   = data.terraform_remote_state.hcp.outputs.vault_admin_token
-}
 
 # Create a KV Version 2 secret engine mount for the environment
 resource "vault_mount" "kvv2" {

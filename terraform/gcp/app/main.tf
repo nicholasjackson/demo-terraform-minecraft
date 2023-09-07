@@ -22,6 +22,16 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 4.0"
     }
+    
+    vault = {
+      source = "hashicorp/vault"
+      version = "3.20.0"
+    }
+    
+    boundary = {
+      source  = "hashicorp/boundary"
+      version = "1.1.9"
+    }
   }
 }
 
@@ -35,6 +45,30 @@ data "google_client_config" "provider" {}
 data "google_container_cluster" "my_cluster" {
   name     = var.cluster
   location = var.location
+}
+
+# Fetch the Vault address and token from the HCP workspace remote state
+data "terraform_remote_state" "hcp" {
+  backend = "remote"
+
+  config = {
+    organization = "HashiCraft"
+    workspaces = {
+      name = "HCP"
+    }
+  }
+}
+
+provider "vault" {
+  # Configuration options
+  address = data.terraform_remote_state.hcp.outputs.vault_public_addr
+  token   = data.terraform_remote_state.hcp.outputs.vault_admin_token
+}
+
+provider "boundary" {
+  addr                   = data.terraform_remote_state.hcp.outputs.boundary_cluster_url
+  auth_method_login_name = data.terraform_remote_state.hcp.outputs.boundary_cluster_user
+  auth_method_password   = data.terraform_remote_state.hcp.outputs.boundary_cluster_password
 }
 
 provider "kubernetes" {

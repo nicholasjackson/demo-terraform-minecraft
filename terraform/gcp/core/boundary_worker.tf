@@ -3,12 +3,6 @@ resource "google_service_account" "worker" {
   display_name = "Boundary worker service account"
 }
 
-provider "boundary" {
-  addr                            = data.terraform_remote_state.hcp.outputs.boundary_cluster_url
-  password_auth_method_login_name = data.terraform_remote_state.hcp.outputs.boundary_cluster_user
-  password_auth_method_password   = data.terraform_remote_state.hcp.outputs.boundary_cluster_password
-}
-
 resource "boundary_worker" "controller_led" {
   scope_id    = "global"
   name        = "gcp_worker"
@@ -16,6 +10,15 @@ resource "boundary_worker" "controller_led" {
 }
 
 resource "google_compute_instance" "boundary" {
+  lifecycle {
+    ignore_changes = [
+      enable_display,
+      metadata_startup_script,
+      labels,
+      metadata,
+    ]
+  }
+
   name         = "boundary-worker"
   machine_type = "e2-small"
   zone         = "${var.location}-b"

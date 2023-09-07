@@ -24,6 +24,18 @@ variable "minecraft_admins" {
   }
 }
 
+variable "boundary_scope_id" {
+  default = "" 
+}
+
+variable "boundary_credential_store_id" {
+  default = "" 
+}
+
+variable "boundary_credential_store_policy" {
+  default = "" 
+}
+
 variable "lock_keys" {
   default = {
     admin = "myadminkey"
