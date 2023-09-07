@@ -36,6 +36,30 @@ variable "boundary_credential_store_policy" {
   default = "" 
 }
 
+variable "vault_approle_id" {
+  default = "" 
+}
+
+variable "vault_approle_secret_id" {
+  default = "" 
+}
+
+variable "vault_approle_path" {
+  default = "" 
+}
+
+variable "vault_userpath_path" {
+  default = "" 
+}
+
+variable "vault_kv_path" {
+  default = "" 
+}
+
+variable "vault_namespace" {
+  default = "" 
+}
+
 variable "lock_keys" {
   default = {
     admin = "myadminkey"

@@ -1,14 +1,3 @@
-variable "project" {
-  default = ""
-}
-
-variable "location" {
-  default = ""
-}
-
-variable "cluster" {
-  default = ""
-}
 
 data "terraform_remote_state" "hcp" {
   backend = "remote"

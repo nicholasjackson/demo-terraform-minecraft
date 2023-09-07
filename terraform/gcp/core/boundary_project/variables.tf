@@ -10,6 +10,18 @@ variable "vault_addr" {
   default = ""
 }
 
-variable "vault_token" {
+variable "vault_approle_path" {
+  default = ""
+}
+
+variable "vault_approle_id" {
+  default = ""
+}
+
+variable "vault_approle_secret_id" {
+  default = ""
+}
+
+variable "vault_namespace" {
   default = ""
 }

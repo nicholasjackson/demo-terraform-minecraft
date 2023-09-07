@@ -17,20 +17,3 @@ resource "hcp_boundary_cluster" "boundary" {
     upgrade_type = "SCHEDULED"
   }
 }
-
-output "boundary_cluster_id" {
-  value = hcp_boundary_cluster.boundary.id
-}
-
-output "boundary_cluster_user" {
-  value = hcp_boundary_cluster.boundary.username
-}
-
-output "boundary_cluster_password" {
-  sensitive = true
-  value = hcp_boundary_cluster.boundary.password
-}
-
-output "boundary_cluster_url" {
-  value = hcp_boundary_cluster.boundary.cluster_url
-}

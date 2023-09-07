@@ -1,14 +1,8 @@
 
 # Create a KV Version 2 secret engine mount for the environment
-resource "vault_mount" "kvv2" {
-  path        = "secrets_${var.environment}"
-  type        = "kv"
-  options     = { version = "2" }
-  description = "KV Version 2 secret engine mount"
-}
 
 resource "vault_kv_secret_v2" "admin_key" {
-  mount               = vault_mount.kvv2.path
+  mount               = var.vault_kv_path
   name                = "admin"
   cas                 = 1
   delete_all_versions = true
@@ -20,7 +14,7 @@ resource "vault_kv_secret_v2" "admin_key" {
 }
 
 resource "vault_kv_secret_v2" "vault_key" {
-  mount               = vault_mount.kvv2.path
+  mount               = var.vault_kv_path
   name                = "vault"
   cas                 = 1
   delete_all_versions = true
@@ -52,11 +46,6 @@ resource "vault_policy" "vault" {
   EOT
 }
 
-resource "vault_auth_backend" "userpass" {
-  path = "userpass_${var.environment}"
-  type = "userpass"
-}
-
 # Create user accounts for Admins
 resource "vault_generic_endpoint" "admin_users" {
   lifecycle {
@@ -65,7 +54,7 @@ resource "vault_generic_endpoint" "admin_users" {
 
   for_each = var.minecraft_admins
 
-  path = "auth/${vault_auth_backend.userpass.path}/users/${each.key}"
+  path = "auth/${var.vault_userpath_path}/users/${each.key}"
 
   data_json = <<-EOT
   {

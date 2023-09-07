@@ -55,18 +55,35 @@ module "boundary_scope_dev" {
   org_id     = boundary_scope.minecraft.id
   scope_name = "minecraft-dev"
 
+  vault_namespace = module.vault_namespace_dev.namespace
   vault_addr  = data.terraform_remote_state.hcp.outputs.vault_public_addr
-  vault_token = data.terraform_remote_state.hcp.outputs.vault_admin_token
+  vault_approle_id = module.vault_namespace_dev.approle_id
+  vault_approle_secret_id = module.vault_namespace_dev.approle_secret_id
+  vault_approle_path = module.vault_namespace_dev.approle_path
 }
 
-output "boundary_dev_details" {
-  value = {
-    credential_store_id = module.boundary_scope_dev.credential_store_id
-    scope_id = module.boundary_scope_dev.scope_id
-  }
+module "boundary_scope_test" {
+  source = "./boundary_project"
+
+  org_id     = boundary_scope.minecraft.id
+  scope_name = "minecraft-test"
+
+  vault_namespace = module.vault_namespace_test.namespace
+  vault_addr  = data.terraform_remote_state.hcp.outputs.vault_public_addr
+  vault_approle_id = module.vault_namespace_test.approle_id
+  vault_approle_secret_id = module.vault_namespace_test.approle_secret_id
+  vault_approle_path = module.vault_namespace_test.approle_path
 }
 
-output "boundary_users" {
-  sensitive = true
-  value = local.user_passwords
+module "boundary_scope_prod" {
+  source = "./boundary_project"
+
+  org_id     = boundary_scope.minecraft.id
+  scope_name = "minecraft-prod"
+
+  vault_namespace = module.vault_namespace_prod.namespace
+  vault_addr  = data.terraform_remote_state.hcp.outputs.vault_public_addr
+  vault_approle_id = module.vault_namespace_prod.approle_id
+  vault_approle_secret_id = module.vault_namespace_prod.approle_secret_id
+  vault_approle_path = module.vault_namespace_prod.approle_path
 }

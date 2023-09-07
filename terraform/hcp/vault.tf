@@ -35,16 +35,3 @@ data "terracurl_request" "admin_token" {
   max_retry      = 1
   retry_interval = 10
 }
-
-output "vault_public_addr" {
-  value = hcp_vault_cluster.vault.vault_public_endpoint_url
-}
-
-output "vault_cluster_id" {
-  value = hcp_vault_cluster.vault.cluster_id
-}
-
-output "vault_admin_token" {
-  value     = jsondecode(data.terracurl_request.admin_token.response).auth.client_token
-  sensitive = true
-}

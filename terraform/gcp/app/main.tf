@@ -60,9 +60,17 @@ data "terraform_remote_state" "hcp" {
 }
 
 provider "vault" {
-  # Configuration options
   address = data.terraform_remote_state.hcp.outputs.vault_public_addr
-  token   = data.terraform_remote_state.hcp.outputs.vault_admin_token
+  skip_child_token = true
+
+  auth_login {
+    path = "auth/${var.vault_approle_path}/login"
+    namespace = "admin/${var.vault_namespace}"
+    parameters = {
+      role_id = var.vault_approle_id
+      secret_id = var.vault_approle_secret_id
+    }
+  }
 }
 
 provider "boundary" {
