@@ -3,6 +3,10 @@ resource "container" "postgres" {
     name = "postgres:15.4"
   }
 
+  network {
+    id = resource.network.local.id
+  }
+
   port {
     local           = 5432
     remote          = 5432

@@ -6,6 +6,23 @@ resource "kubernetes_config_map" "config" {
   data = local.config_files
 }
 
+data "vault_generic_secret" "sql_writer" {
+  path = "${vault_database_secrets_mount.minecraft.path}/creds/importer"
+}
+
+resource "kubernetes_secret" "db_writer" {
+  metadata {
+    name = "minecraft-db-${var.environment}"
+  }
+
+  data = {
+    db_host     = "${google_sql_database_instance.instance.public_ip_address}:5432"
+    db_username = data.vault_generic_secret.sql_writer.data.username
+    db_password = data.vault_generic_secret.sql_writer.data.password
+    db_database = google_sql_database.minecraft.name
+  }
+}
+
 resource "kubernetes_deployment" "minecraft" {
   metadata {
     name = "minecraft-${var.environment}"
@@ -85,6 +102,46 @@ resource "kubernetes_deployment" "minecraft" {
           env {
             name  = "SPAWN_NPCS"
             value = "true"
+          }
+          
+          env {
+            name  = "MICROSERVICES_db_host"
+            value_from {
+              secret_key_ref {
+                name = kubernetes_secret.db_writer.metadata.0.name
+                key  = "db_host"
+              }
+            }
+          }
+          
+          env {
+            name  = "MICROSERVICES_db_username"
+            value_from {
+              secret_key_ref {
+                name = kubernetes_secret.db_writer.metadata.0.name
+                key  = "db_username"
+              }
+            }
+          }
+          
+          env {
+            name  = "MICROSERVICES_db_password"
+            value_from {
+              secret_key_ref {
+                name = kubernetes_secret.db_writer.metadata.0.name
+                key  = "db_password"
+              }
+            }
+          }
+          
+          env {
+            name  = "MICROSERVICES_db_database"
+            value_from {
+              secret_key_ref {
+                name = kubernetes_secret.db_writer.metadata.0.name
+                key  = "db_database"
+              }
+            }
           }
 
           dynamic "volume_mount" {

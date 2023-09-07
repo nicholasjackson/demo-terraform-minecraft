@@ -4,7 +4,7 @@ resource "container" "minecraft" {
   }
 
   network {
-    id         = resource.network.local.id
+    id = resource.network.local.id
   }
 
   # Minecraft
@@ -29,16 +29,20 @@ resource "container" "minecraft" {
   }
 
   environment = {
-    MODS_BACKUP       = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/mods/mods.tar.gz"
-    GAME_MODE         = "creative"
-    WHITELIST_ENABLED = "false"
-    RCON_ENABLED      = "true"
-    RCON_PASSWORD     = "password"
-    SPAWN_ANIMALS     = "true"
-    SPAWN_NPCS        = "true"
-    VAULT_ADDR        = "http://vault.container.jumppad.dev:8200"
-    VAULT_TOKEN       = variable.vault_root_token
-    HASHICRAFT_env    = "local"
+    MODS_BACKUP               = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/mods/mods.tar.gz"
+    GAME_MODE                 = "creative"
+    WHITELIST_ENABLED         = "false"
+    RCON_ENABLED              = "true"
+    RCON_PASSWORD             = "password"
+    SPAWN_ANIMALS             = "true"
+    SPAWN_NPCS                = "true"
+    VAULT_ADDR                = "http://vault.container.jumppad.dev:8200"
+    VAULT_TOKEN               = variable.vault_root_token
+    HASHICRAFT_env            = "local"
+    MICROSERVICES_db_host     = "postgres.container.jumppad.dev:5432"
+    MICROSERVICES_db_username = "postgres"
+    MICROSERVICES_db_password = "password"
+    MICROSERVICES_db_database = "mydb"
   }
 
   volume {
