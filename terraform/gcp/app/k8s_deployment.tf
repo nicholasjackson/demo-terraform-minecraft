@@ -7,7 +7,7 @@ resource "kubernetes_config_map" "config" {
 }
 
 data "vault_generic_secret" "sql_writer" {
-  path = "${vault_database_secrets_mount.minecraft.path}/creds/importer"
+  path = "${vault_database_secrets_mount.minecraft.path}/creds/writer"
 }
 
 resource "kubernetes_secret" "db_writer" {
