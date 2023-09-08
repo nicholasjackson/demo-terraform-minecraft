@@ -1,3 +1,56 @@
+# Locals allow functions like file to be used, variables do not
+# Add the config files to a map so we can create kube volume mounts
+# The key is the path to mount the file with _ substituted for /
+locals {
+  config_files = {
+    "banned-ips.json"             = "${file("${path.module}/config/banned-ips.json")}"
+    "banned-players.json"         = "${file("${path.module}/config/banned-players.json")}"
+    "bukkit.yml"                  = "${file("${path.module}/config/bukkit.yml")}"
+    "ops.json"                    = "${file("${path.module}/config/ops.json")}"
+    "usercache.json"              = "${file("${path.module}/config/usercache.json")}"
+    "whitelist.json"              = "${file("${path.module}/config/whitelist.json")}"
+    "bluemap_core.conf"           = "${file("${path.module}/config/core.conf")}"
+    "bluemap_maps_overworld.conf" = "${file("${path.module}/config/overworld.conf")}"
+    "bluemap_maps_nether.conf"    = "${file("${path.module}/config/nether.conf")}"
+    "bluemap_maps_end.conf"       = "${file("${path.module}/config/end.conf")}"
+  }
+}
+
+locals {
+  deployment_env = {
+    "WORLD_CHECKSUM"  = file("./checksum.txt")
+    "MODS_BACKUP"     = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/mods/mods.tar.gz"
+    "WORLD_BACKUP"    = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/${var.environment}/world.tar.gz"
+    "VAULT_ADDR"      = data.terraform_remote_state.hcp.outputs.vault_public_addr
+    "VAULT_NAMESPACE" = "admin/${var.environment}"
+    "HASHICRAFT_env"  = var.environment
+    "SPAWN_ANIMALS"   = "true"
+    "SPAWN_NPCS"      = "true"
+  }
+
+  secrets_env = {
+    "MICROSERVICES_db_host" = {
+      name = kubernetes_secret.db_writer.metadata.0.name
+      key  = "db_host"
+    }
+
+    "MICROSERVICES_db_username" = {
+      name = kubernetes_secret.db_writer.metadata.0.name
+      key  = "db_username"
+    }
+
+    "MICROSERVICES_db_password" = {
+      name = kubernetes_secret.db_writer.metadata.0.name
+      key  = "db_password"
+    }
+
+    "MICROSERVICES_db_database" = {
+      name = kubernetes_secret.db_writer.metadata.0.name
+      key  = "db_database"
+    }
+  }
+}
+
 resource "kubernetes_config_map" "config" {
   metadata {
     name = "minecraft-config-${var.environment}"
@@ -64,82 +117,25 @@ resource "kubernetes_deployment" "minecraft" {
             }
           }
 
-          env {
-            name  = "WORLD_CHECKSUM"
-            value = file("./checksum.txt")
-          }
+          dynamic "env" {
+            for_each = local.deployment_env
 
-          env {
-            name  = "MODS_BACKUP"
-            value = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/mods/mods.tar.gz"
-          }
-
-          env {
-            name  = "WORLD_BACKUP"
-            value = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/${var.environment}/world.tar.gz"
-          }
-
-          env {
-            name  = "VAULT_ADDR"
-            value = data.terraform_remote_state.hcp.outputs.vault_public_addr
-          }
-
-          env {
-            name  = "VAULT_NAMESPACE"
-            value = "admin"
-          }
-
-          env {
-            name  = "HASHICRAFT_env"
-            value = var.environment
-          }
-
-          env {
-            name  = "SPAWN_ANIMALS"
-            value = "true"
-          }
-
-          env {
-            name  = "SPAWN_NPCS"
-            value = "true"
-          }
-          
-          env {
-            name  = "MICROSERVICES_db_host"
-            value_from {
-              secret_key_ref {
-                name = kubernetes_secret.db_writer.metadata.0.name
-                key  = "db_host"
-              }
+            content {
+              name  = env.key
+              value = env.value
             }
           }
-          
-          env {
-            name  = "MICROSERVICES_db_username"
-            value_from {
-              secret_key_ref {
-                name = kubernetes_secret.db_writer.metadata.0.name
-                key  = "db_username"
-              }
-            }
-          }
-          
-          env {
-            name  = "MICROSERVICES_db_password"
-            value_from {
-              secret_key_ref {
-                name = kubernetes_secret.db_writer.metadata.0.name
-                key  = "db_password"
-              }
-            }
-          }
-          
-          env {
-            name  = "MICROSERVICES_db_database"
-            value_from {
-              secret_key_ref {
-                name = kubernetes_secret.db_writer.metadata.0.name
-                key  = "db_database"
+
+          dynamic "env" {
+            for_each = local.secrets_env
+
+            content {
+              name = env.key
+              value_from {
+                secret_key_ref {
+                  name = env.value.name
+                  key  = env.value.key
+                }
               }
             }
           }
