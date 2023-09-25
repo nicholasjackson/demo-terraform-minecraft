@@ -27,6 +27,7 @@ resource "random_password" "password" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
+
 # create a map of user names to passwords 
 locals {
   user_passwords = zipmap(var.users, random_password.password.*.result)
@@ -46,6 +47,17 @@ resource "boundary_user" "user" {
   name        = boundary_account_password.userpass[each.key].login_name
   account_ids = [boundary_account_password.userpass[each.key].id]
   scope_id    = boundary_scope.minecraft.id
+}
+
+// create a map of user details for the output
+locals {
+  user_details = {
+    for user,pass in local.user_passwords:
+    user => {
+      id = boundary_user.user[user].id
+      password = pass
+    }
+  }
 }
 
 # Creates the project and the credentials store

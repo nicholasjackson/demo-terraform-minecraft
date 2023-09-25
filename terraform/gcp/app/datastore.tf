@@ -51,28 +51,6 @@ resource "vault_database_secrets_mount" "minecraft" {
   }
 }
 
-resource "vault_database_secret_backend_role" "reader" {
-  name    = "reader"
-  backend = vault_database_secrets_mount.minecraft.path
-  db_name = vault_database_secrets_mount.minecraft.postgresql[0].name
-  creation_statements = [
-    "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';",
-    "GRANT SELECT ON counter TO \"{{name}}\";",
-  ]
-}
-
-resource "vault_database_secret_backend_role" "writer" {
-  name    = "writer"
-  backend = vault_database_secrets_mount.minecraft.path
-  db_name = vault_database_secrets_mount.minecraft.postgresql[0].name
-  creation_statements = [
-    "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';",
-    "GRANT SELECT ON counter TO \"{{name}}\";",
-    "GRANT INSERT ON counter TO \"{{name}}\";",
-    "GRANT UPDATE ON counter TO \"{{name}}\";",
-    "GRANT DELETE ON counter TO \"{{name}}\";",
-  ]
-}
 
 # Short lived user for importing data
 resource "vault_database_secret_backend_role" "importer" {
@@ -168,7 +146,36 @@ resource "kubernetes_job" "sql_import" {
 
   }
 
-  wait_for_completion = false
+  wait_for_completion = true
+}
+
+// the following two roles can only be created after the counter table is generated
+// from the sql import
+resource "vault_database_secret_backend_role" "reader" {
+  depends_on = [ kubernetes_job.sql_import ]
+
+  name    = "reader"
+  backend = vault_database_secrets_mount.minecraft.path
+  db_name = vault_database_secrets_mount.minecraft.postgresql[0].name
+  creation_statements = [
+    "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';",
+    "GRANT SELECT ON counter TO \"{{name}}\";",
+  ]
+}
+
+resource "vault_database_secret_backend_role" "writer" {
+  depends_on = [ kubernetes_job.sql_import ]
+
+  name    = "writer"
+  backend = vault_database_secrets_mount.minecraft.path
+  db_name = vault_database_secrets_mount.minecraft.postgresql[0].name
+  creation_statements = [
+    "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';",
+    "GRANT SELECT ON counter TO \"{{name}}\";",
+    "GRANT INSERT ON counter TO \"{{name}}\";",
+    "GRANT UPDATE ON counter TO \"{{name}}\";",
+    "GRANT DELETE ON counter TO \"{{name}}\";",
+  ]
 }
 
 resource "boundary_credential_library_vault" "db" {
@@ -201,6 +208,6 @@ resource "boundary_role" "db_users" {
   description = "Access to the database"
   scope_id    = var.boundary_scope_id
 
-  principal_ids = ["u_DaDHlIhmnc"]
+  principal_ids = [for user, id in var.boundary_user_accounts : id]
   grant_strings = ["id=*;type=*;actions=*"]
 }

@@ -18,14 +18,14 @@ locals {
 
 locals {
   deployment_env = {
-    "WORLD_CHECKSUM"  = file("./checksum.txt")
-    "MODS_BACKUP"     = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/mods/mods.tar.gz"
-    "WORLD_BACKUP"    = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/${var.environment}/world.tar.gz"
-    "VAULT_ADDR"      = data.terraform_remote_state.hcp.outputs.vault_public_addr
-    "VAULT_NAMESPACE" = "admin/${var.environment}"
-    "HASHICRAFT_env"  = var.environment
-    "SPAWN_ANIMALS"   = "true"
-    "SPAWN_NPCS"      = "true"
+    "WORLD_CHECKSUM"  = file("./checksum.txt") // checksum for the minecraft world, forces redeploy when tar changes
+    "MODS_BACKUP"     = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/mods/mods.tar.gz" // location of mods to install
+    "WORLD_BACKUP"    = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/${var.environment}/world.tar.gz" // location of the minecraft world
+    "VAULT_ADDR"      = var.vault_addr // address of the vault server used by the Vault Lock Block
+    "VAULT_NAMESPACE" = "admin/${var.environment}" // namespace to use for the Vault Lock Block
+    "HASHICRAFT_env"  = var.environment // Vault namespace environment to use for the Vault Lock Block
+    "SPAWN_ANIMALS"   = "true" // enable animals
+    "SPAWN_NPCS"      = "true" // enable NPCs
   }
 
   secrets_env = {

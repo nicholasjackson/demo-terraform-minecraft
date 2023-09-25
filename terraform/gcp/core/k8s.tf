@@ -26,8 +26,25 @@ resource "google_container_node_pool" "primary_preemptible_nodes" {
 
     # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
     service_account = google_service_account.cluster.email
-    oauth_scopes    = [
+    oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
+  }
+}
+
+resource "helm_release" "vault_controller" {
+  name       = "vault-controller"
+
+  repository = "https://helm.releases.hashicorp.com"
+  chart      = "vault-secrets-operator"
+
+  set {
+    name = "defaultVaultConnection.enabled"
+    value = "true"
+  }
+  
+  set {
+    name = "defaultVaultConnection.address"
+    value = data.terraform_remote_state.hcp.outputs.vault_public_addr
   }
 }

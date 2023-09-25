@@ -30,6 +30,7 @@ provider "registry.terraform.io/hashicorp/boundary" {
   constraints = "1.1.9"
   hashes = [
     "h1:0CVDjVvwGP61jrm9EoS3LPFDNXsMw9A4ePGl4N/yjVk=",
+    "h1:VxAOZ3Salm+sFgAsUwnnTyPTu5mR8rAhrq9iFT9f0OM=",
     "zh:04ba8085e722d61e553337882b4f6b5ee2c1eff21dbb2422eed329fbdfe6e95d",
     "zh:1fe6b90fc0e2c91ae8d94236554ec3939f98b989b86c4d5452845b803bcd3af6",
     "zh:3a211c794760b2842b1d90ff5f373ad5e3b1112e436d0318a4056dda80e35ee2",
