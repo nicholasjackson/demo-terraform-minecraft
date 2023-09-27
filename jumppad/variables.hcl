@@ -46,3 +46,11 @@ variable "vault_bootstrap_script" {
   vault status
   EOF
 }
+
+variable "vault_userpass_users" {
+  default = [{
+    username = "SheriffJackson"
+    password = "642bf65a-0f3a-4c23-ac62-fefcb5fc420d"
+    policies = "user,admin"
+  }]
+}
