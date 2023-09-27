@@ -51,7 +51,6 @@ resource "vault_database_secrets_mount" "minecraft" {
   }
 }
 
-
 # Short lived user for importing data
 resource "vault_database_secret_backend_role" "importer" {
   name    = "importer"

@@ -52,6 +52,9 @@ locals {
 
 }
 
+// Read from the dynamic secrets engine in vault and set a kubernetes secret
+// this does not keep the secret up to date and will only be update when the application is 
+// deployed. Better than using static database credentials but not ideal.
 data "vault_generic_secret" "sql_writer" {
   path = "${vault_database_secrets_mount.minecraft.path}/creds/writer"
 }
