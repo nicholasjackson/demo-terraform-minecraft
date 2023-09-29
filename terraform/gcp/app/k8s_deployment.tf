@@ -131,18 +131,26 @@ resource "kubernetes_deployment" "minecraft" {
             }
           }
 
-          dynamic "env" {
-            for_each = local.secrets_env
+          // mounting secrets as environment variables means they are not updated
+          // when the secret changes
+          //dynamic "env" {
+          //  for_each = local.secrets_env
 
-            content {
-              name = env.key
-              value_from {
-                secret_key_ref {
-                  name = env.value.name
-                  key  = env.value.key
-                }
-              }
-            }
+          //  content {
+          //    name = env.key
+          //    value_from {
+          //      secret_key_ref {
+          //        name = env.value.name
+          //        key  = env.value.key
+          //      }
+          //    }
+          //  }
+          //}
+
+          volume_mount {
+            name      = "db-secrets"
+            mount_path = "/etc/db_secrets"
+            read_only  = true
           }
 
           dynamic "volume_mount" {
@@ -158,6 +166,13 @@ resource "kubernetes_deployment" "minecraft" {
           }
         }
 
+        // mount the secret as a volume so it will be updated when the secret changes
+        volume {
+          name = "db-secrets"
+          secret {
+            secret_name = kubernetes_secret.db_writer.metadata.0.name
+          }
+        }
 
         volume {
           name = "config"

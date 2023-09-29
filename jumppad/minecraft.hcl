@@ -21,6 +21,13 @@ resource "container" "minecraft" {
     local  = 9090
   }
 
+  # Microservice
+  port {
+    remote = 8080
+    host   = 8080
+    local  = 8080
+  }
+
   # Bluemap
   port {
     remote = 8100
@@ -40,9 +47,13 @@ resource "container" "minecraft" {
     VAULT_TOKEN               = variable.vault_root_token
     HASHICRAFT_env            = "local"
     MICROSERVICES_db_host     = "postgres.container.jumppad.dev:5432"
-    MICROSERVICES_db_username = "postgres"
     MICROSERVICES_db_password = "password"
     MICROSERVICES_db_database = "mydb"
+  }
+
+  volume {
+    source      = "./db_env"
+    destination = "/secrets"
   }
 
   volume {

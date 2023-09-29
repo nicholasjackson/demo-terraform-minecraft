@@ -89,19 +89,37 @@ resource "kubernetes_config_map" "sql_import" {
 }
 
 resource "kubernetes_job" "sql_import" {
+  // we only want this to be created or destroyed
+  // if we need to update we can taint the resource
+  lifecycle {
+    ignore_changes = all
+  }
+
   metadata {
+    annotations = {}
     name = "minecraft-db-import-${var.environment}"
   }
 
   spec {
+    active_deadline_seconds = 60
+    manual_selector = false
+
     template {
-      metadata {}
+      metadata {
+        annotations = {}
+        labels = {}
+      }
 
       spec {
+        active_deadline_seconds = 60
+        node_selector =  {}
+        scheduler_name = "default-scheduler"
+
         container {
           name    = "postgres"
           image   = "postgres:15.4"
           command = ["bin/sh", "-c", "psql -a -f /sql/import.sql"]
+          args = []
 
           volume_mount {
             name       = "sql"
@@ -127,6 +145,18 @@ resource "kubernetes_job" "sql_import" {
             name  = "PGUSER"
             value = data.vault_generic_secret.sql_creator.data.username
           }
+
+          resources {
+            limits = {
+              cpu    = "1"
+              memory = "512Mi"
+            }
+
+            requests = {
+              cpu    = "1"
+              memory = "512Mi"
+            }
+          }
         }
 
         volume {
@@ -134,6 +164,7 @@ resource "kubernetes_job" "sql_import" {
 
           config_map {
             name = kubernetes_config_map.sql_import.metadata.0.name
+            optional = false
           }
         }
 

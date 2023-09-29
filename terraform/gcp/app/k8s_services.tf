@@ -24,6 +24,28 @@ resource "kubernetes_service" "minecraft" {
   }
 }
 
+resource "kubernetes_service" "microservice" {
+  metadata {
+    name = "service-${var.environment}"
+  }
+
+  spec {
+    selector = {
+      app = "minecraft-${var.environment}"
+    }
+
+    session_affinity = "ClientIP"
+    port {
+      protocol    = "TCP"
+      port        = 8080
+      target_port = 8080
+    }
+
+    type             = "LoadBalancer"
+    load_balancer_ip = google_compute_address.minecraft.address
+  }
+}
+
 resource "kubernetes_service" "bluemap" {
   count = var.environment == "prod" ? 0 : 1
 
@@ -52,6 +74,6 @@ resource "cloudflare_record" "minecraft" {
   name    = "minecraft-${var.environment}"
   value   = google_compute_address.minecraft.address
   type    = "A"
-  ttl     = 3600
+  ttl     = 360
   proxied = false
 }
