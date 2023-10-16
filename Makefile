@@ -8,7 +8,7 @@ build_image:
 	cd Docker && docker build -t hashicraft/minecraftservice:v0.0.3 .
 
 push_image:
-	cd Docker && docker build -t hashicraft/minecraftservice:v0.0.3 .
+	docker push hashicraft/minecraftservice:v0.0.3
 
 run_local:
 	docker run \
