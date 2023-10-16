@@ -9,6 +9,8 @@ locals {
     "ops.json"                    = "${file("${path.module}/config/ops.json")}"
     "usercache.json"              = "${file("${path.module}/config/usercache.json")}"
     "whitelist.json"              = "${file("${path.module}/config/whitelist.json")}"
+    "databases.json"              = "${file("${path.module}/config/databases.json")}"
+    "webservers.json"             = "${file("${path.module}/config/webservers.json")}"
     "bluemap_core.conf"           = "${file("${path.module}/config/core.conf")}"
     "bluemap_maps_overworld.conf" = "${file("${path.module}/config/overworld.conf")}"
     "bluemap_maps_nether.conf"    = "${file("${path.module}/config/nether.conf")}"
@@ -26,6 +28,7 @@ locals {
     "HASHICRAFT_env"  = var.environment // Vault namespace environment to use for the Vault Lock Block
     "SPAWN_ANIMALS"   = "true" // enable animals
     "SPAWN_NPCS"      = "true" // enable NPCs
+    "ONLINE_MODE"     = "false" // disable online mode
   }
 
   secrets_env = {
@@ -107,7 +110,7 @@ resource "kubernetes_deployment" "minecraft" {
 
       spec {
         container {
-          image = "hashicraft/minecraft:v1.20.1-fabric"
+          image = "hashicraft/minecraftservice:v0.0.1"
           name  = "minecraft"
 
           resources {

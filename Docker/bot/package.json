@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "mineflayer": "^4.14.0",
+    "mineflayer-pathfinder": "^2.4.5"
+  }
+}

@@ -37,8 +37,8 @@ resource "kubernetes_service" "microservice" {
     session_affinity = "ClientIP"
     port {
       protocol    = "TCP"
-      port        = 8080
-      target_port = 8080
+      port        = 8081
+      target_port = 8081
     }
 
     type             = "LoadBalancer"
@@ -46,7 +46,7 @@ resource "kubernetes_service" "microservice" {
   }
 }
 
-resource "kubernetes_service" "bluemap" {
+resource "kubernetes_service" "prismarine" {
   count = var.environment == "prod" ? 0 : 1
 
   metadata {
@@ -62,7 +62,7 @@ resource "kubernetes_service" "bluemap" {
     port {
       protocol    = "TCP"
       port        = 80
-      target_port = 8100
+      target_port = 8080
     }
     type             = "LoadBalancer"
     load_balancer_ip = google_compute_address.minecraft.address

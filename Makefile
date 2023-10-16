@@ -4,6 +4,9 @@ tar_mods:
 tar_world:
 	tar -C $(shell pwd)/world -czf ./world.tar.gz ./
 
+build_image:
+	cd Docker && docker build -t hashicraft/minecraftservice:v0.0.1 .
+
 run_local:
 	docker run \
 		--rm \
@@ -40,3 +43,8 @@ run_conftest:
 	cd ./terraform/gcp/app && \
 	tfc-plan --out app-plan.json && \
 	conftest test ./app-plan.json
+
+terraform_app:
+	cp ./config/* ./terraform/gcp/app/config/
+	cd ./terraform/gcp/app && \
+		terraform plan

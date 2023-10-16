@@ -1,6 +1,6 @@
 resource "container" "minecraft" {
   image {
-    name = "hashicraft/minecraft:v1.20.1-fabric"
+    name = "hashicraft/minecraftservice:v0.0.1"
   }
 
   network {
@@ -21,11 +21,18 @@ resource "container" "minecraft" {
     local  = 9090
   }
 
-  # Microservice
+  # Prismarine
   port {
     remote = 8080
     host   = 8080
     local  = 8080
+  }
+
+  # Microservice 
+  port {
+    remote = 8081
+    host   = 8081
+    local  = 8081
   }
 
   # Bluemap
@@ -39,6 +46,7 @@ resource "container" "minecraft" {
     MODS_BACKUP               = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/mods/mods.tar.gz"
     GAME_MODE                 = "creative"
     WHITELIST_ENABLED         = "false"
+    ONLINE_MODE               = "false"
     RCON_ENABLED              = "true"
     RCON_PASSWORD             = "password"
     SPAWN_ANIMALS             = "true"
@@ -62,52 +70,62 @@ resource "container" "minecraft" {
   }
 
   volume {
-    source      = "./config/banned-ips.json"
+    source      = "../config/databases.json"
+    destination = "/minecraft/config/databases.json"
+  }
+
+  volume {
+    source      = "../config/webservers.json"
+    destination = "/minecraft/config/webservers.json"
+  }
+
+  volume {
+    source      = "../config/banned-ips.json"
     destination = "/minecraft/world/config/banned-ips.json"
   }
 
   volume {
-    source      = "./config/banned-players.json"
+    source      = "../config/banned-players.json"
     destination = "/minecraft/world/config/banned-players.json"
   }
 
   volume {
-    source      = "./config/bukkit.yml"
+    source      = "../config/bukkit.yml"
     destination = "/minecraft/world/config/bukkit.yml"
   }
 
   volume {
-    source      = "./config/ops.json"
+    source      = "../config/ops.json"
     destination = "/minecraft/world/config/ops.json"
   }
 
   volume {
-    source      = "./config/usercache.json"
+    source      = "../config/usercache.json"
     destination = "/minecraft/world/config/usercache.json"
   }
 
   volume {
-    source      = "./config/whitelist.json"
+    source      = "../config/whitelist.json"
     destination = "/minecraft/world/config/whitelist.json"
   }
 
   volume {
-    source      = "./config/core.conf"
+    source      = "../config/core.conf"
     destination = "/minecraft/world/config/bluemap/core.conf"
   }
 
   volume {
-    source      = "./config/overworld.conf"
+    source      = "../config/overworld.conf"
     destination = "/minecraft/world/config/bluemap/maps/overworld.conf"
   }
 
   volume {
-    source      = "./config/end.conf"
+    source      = "../config/end.conf"
     destination = "/minecraft/world/config/bluemap/maps/end.conf"
   }
 
   volume {
-    source      = "./config/nether.conf"
+    source      = "../config/nether.conf"
     destination = "/minecraft/world/config/bluemap/maps/nether.conf"
   }
 }
