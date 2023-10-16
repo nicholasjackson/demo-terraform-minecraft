@@ -50,7 +50,7 @@ resource "kubernetes_service" "prismarine" {
   count = var.environment == "prod" ? 0 : 1
 
   metadata {
-    name = "bluemap-${var.environment}"
+    name = "prismarine-${var.environment}"
   }
 
   spec {

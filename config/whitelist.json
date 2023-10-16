@@ -6,5 +6,29 @@
   {
     "uuid": "0b2a45be-990f-458d-8cc4-0445c92f91b3",
     "name": "ksatirli"
+  },
+  {
+    "uuid": "117b7ab7-760b-301d-9158-44c828ac55fa",
+    "name": "SRE"
+  },
+  {
+    "username": "viewer1",
+    "uuid": "9c3f42fa-0fde-35a2-9547-2ba9a631c76f"
+  }, 
+  {
+    "username": "viewer2",
+    "uuid": "5ede89eb-1582-345c-8203-5af477fff4bd"
+  }, 
+  {
+    "username": "viewer3",
+    "uuid": "e686fe79-a1ab-37ba-8e37-863cafbf923e"
+  }, 
+  {
+    "username": "viewer4",
+    "uuid": "a8a0b3d8-d976-3972-a5a2-a833e6f29ab1"
+  }, 
+  {
+    "username": "viewer5",
+    "uuid": "a67b6e0f-5807-3dd2-967f-cdd6e8e3eb15"
   }
 ]

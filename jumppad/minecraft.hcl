@@ -59,11 +59,13 @@ resource "container" "minecraft" {
     MICROSERVICES_db_database = "mydb"
   }
 
+  # Mount the secrets that contain the db connection info
   volume {
     source      = "./db_env"
-    destination = "/secrets"
+    destination = "/etc/db_secrets"
   }
 
+  # Mount the local world and config files 
   volume {
     source      = "../world"
     destination = "/minecraft/world"

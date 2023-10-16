@@ -1,9 +1,9 @@
 {
   "200_-2_1073": {
-    "address": "${{file(\"/secrets/db_host\")}}",
-    "username": "${{file(\"/secrets/db_username\")}}",
-    "password": "${{file(\"/secrets/db_password\")}}",
-    "database": "${{file(\"/secrets/db_database\")}}",
-    "sql": "update counter set count\u003d(select count from counter limit 1)+1;select * from counter;"
+    "address": "${{file(\"/etc/db_secrets/db_host\")}}",
+    "username": "${{file(\"/etc/db_secrets/db_username\")}}",
+    "password": "${{file(\"/etc/db_secrets/db_password\")}}",
+    "database": "${{file(\"/etc/db_secrets/db_database\")}}",
+    "sql": "UPDATE counter set count\u003d(SELECT count from counter limit 1)+1;SELECT count from counter;"
   }
 }

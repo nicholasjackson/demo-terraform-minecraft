@@ -59,7 +59,7 @@ locals {
 // this does not keep the secret up to date and will only be update when the application is 
 // deployed. Better than using static database credentials but not ideal.
 data "vault_generic_secret" "sql_writer" {
-  path = "${vault_database_secrets_mount.minecraft.path}/creds/writer"
+  path = "${vault_database_secrets_mount.minecraft.path}/creds/${vault_database_secret_backend_role.writer.name}"
 }
 
 resource "kubernetes_secret" "db_writer" {
@@ -116,11 +116,11 @@ resource "kubernetes_deployment" "minecraft" {
           resources {
             limits = {
               cpu    = "1"
-              memory = "2048Mi"
+              memory = "4096Mi"
             }
             requests = {
               cpu    = "1"
-              memory = "2048Mi"
+              memory = "4096Mi"
             }
           }
 
