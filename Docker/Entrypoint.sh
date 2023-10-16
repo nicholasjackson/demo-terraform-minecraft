@@ -66,9 +66,6 @@ eval "echo \"$(cat /server.properties)\"" > /minecraft/server.properties
 # Start the bot
 cd /bot && node main.js &
 
-# Start prismarine
-cd /prismarine && npm run start &
-
 # Start the server
 cd /minecraft && java -Xmx${JAVA_MEMORY} -Xms${JAVA_MEMORY} -Dfml.queryResult=confirm -jar fabric-server-launch.jar nogui &
 

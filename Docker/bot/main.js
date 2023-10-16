@@ -2,6 +2,8 @@ const mineflayer = require('mineflayer')
 const { pathfinder, Movements, goals: { GoalNear } } = require('mineflayer-pathfinder')
 
 async function createBot() {
+  await sleep(10000);
+
   const bot = mineflayer.createBot({
     host: 'localhost',
     port: 25565,

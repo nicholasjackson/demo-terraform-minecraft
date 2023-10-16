@@ -110,7 +110,7 @@ resource "kubernetes_deployment" "minecraft" {
 
       spec {
         container {
-          image = "hashicraft/minecraftservice:v0.0.1"
+          image = "hashicraft/minecraftservice:v0.0.2"
           name  = "minecraft"
 
           resources {

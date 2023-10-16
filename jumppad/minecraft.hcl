@@ -1,6 +1,6 @@
 resource "container" "minecraft" {
   image {
-    name = "hashicraft/minecraftservice:v0.0.1"
+    name = "hashicraft/minecraftservice:v0.0.2"
   }
 
   network {
