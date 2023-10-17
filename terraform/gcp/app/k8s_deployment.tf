@@ -30,49 +30,6 @@ locals {
     "SPAWN_NPCS"      = "true" // enable NPCs
     "ONLINE_MODE"     = "false" // disable online mode
   }
-
-  secrets_env = {
-    "MICROSERVICES_db_host" = {
-      name = kubernetes_secret.db_writer.metadata.0.name
-      key  = "db_host"
-    }
-
-    "MICROSERVICES_db_username" = {
-      name = kubernetes_secret.db_writer.metadata.0.name
-      key  = "db_username"
-    }
-
-    "MICROSERVICES_db_password" = {
-      name = kubernetes_secret.db_writer.metadata.0.name
-      key  = "db_password"
-    }
-
-    "MICROSERVICES_db_database" = {
-      name = kubernetes_secret.db_writer.metadata.0.name
-      key  = "db_database"
-    }
-  }
-
-}
-
-// Read from the dynamic secrets engine in vault and set a kubernetes secret
-// this does not keep the secret up to date and will only be update when the application is 
-// deployed. Better than using static database credentials but not ideal.
-data "vault_generic_secret" "sql_writer" {
-  path = "${vault_database_secrets_mount.minecraft.path}/creds/${vault_database_secret_backend_role.writer.name}"
-}
-
-resource "kubernetes_secret" "db_writer" {
-  metadata {
-    name = "minecraft-db-${var.environment}"
-  }
-
-  data = {
-    db_host     = "${google_sql_database_instance.instance.public_ip_address}:5432"
-    db_username = data.vault_generic_secret.sql_writer.data.username
-    db_password = data.vault_generic_secret.sql_writer.data.password
-    db_database = google_sql_database.minecraft.name
-  }
 }
 
 resource "kubernetes_config_map" "config" {
@@ -150,12 +107,6 @@ resource "kubernetes_deployment" "minecraft" {
           //  }
           //}
 
-          volume_mount {
-            name      = "db-secrets"
-            mount_path = "/etc/db_secrets"
-            read_only  = true
-          }
-
           dynamic "volume_mount" {
             for_each = local.config_files
 
@@ -166,14 +117,6 @@ resource "kubernetes_deployment" "minecraft" {
               sub_path   = volume_mount.key
               read_only  = false
             }
-          }
-        }
-
-        // mount the secret as a volume so it will be updated when the secret changes
-        volume {
-          name = "db-secrets"
-          secret {
-            secret_name = kubernetes_secret.db_writer.metadata.0.name
           }
         }
 

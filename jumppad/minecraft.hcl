@@ -1,6 +1,6 @@
 resource "container" "minecraft" {
   image {
-    name = "hashicraft/minecraftservice:v0.0.3"
+    name = "hashicraft/minecraft:v1.20.1-fabric"
   }
 
   network {
@@ -12,13 +12,6 @@ resource "container" "minecraft" {
     remote = 25565
     host   = 25565
     local  = 25565
-  }
-
-  # API Server
-  port {
-    remote = 9090
-    host   = 9090
-    local  = 9090
   }
 
   # Prismarine

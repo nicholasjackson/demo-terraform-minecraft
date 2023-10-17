@@ -1,5 +1,10 @@
 {
   "187_-2_1071": {
+    "serverPort": "8082",
+    "serverPath": "/",
+    "serverMethod": "GET"
+  },
+  "192_-2_1071": {
     "serverPort": "8081",
     "serverPath": "/",
     "serverMethod": "GET"

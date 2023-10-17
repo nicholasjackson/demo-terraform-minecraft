@@ -1,9 +1,16 @@
 {
-  "200_-2_1073": {
-    "address": "${{file(\"/etc/db_secrets/db_host\")}}",
-    "username": "${{file(\"/etc/db_secrets/db_username\")}}",
-    "password": "${{file(\"/etc/db_secrets/db_password\")}}",
-    "database": "${{file(\"/etc/db_secrets/db_database\")}}",
-    "sql": "UPDATE counter set count\u003d(SELECT count from counter limit 1)+1;SELECT count from counter;"
+  "206_0_1077": {
+    "address": "postgres.container.jumppad.dev:5432",
+    "username": "postgres",
+    "password": "password",
+    "database": "mydb",
+    "sql": "update counter set count\u003d(select count from counter limit 1);select count from counter;"
+  },
+  "192_-2_1073": {
+    "address": "postgres.container.jumppad.dev:5432",
+    "username": "postgres",
+    "password": "password",
+    "database": "mydb",
+    "sql": "UPDATE counter set count\u003d(select count from counter limit 1)+1;select * from counter"
   }
 }
