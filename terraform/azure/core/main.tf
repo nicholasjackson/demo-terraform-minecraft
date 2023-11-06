@@ -33,6 +33,11 @@ terraform {
       source = "hashicorp/azurerm"
       version = "3.79.0"
     }
+    
+    tfe = {
+      source = "hashicorp/tfe"
+      version = "0.49.2"
+    }
   }
 }
 
@@ -71,6 +76,10 @@ provider "helm" {
     client_key             = base64decode(azurerm_kubernetes_cluster.cluster.kube_config.0.client_key)
     cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.cluster.kube_config.0.cluster_ca_certificate)
   }
+}
+
+provider "tfe" {
+  organization = var.tfe_organization
 }
 
 resource "azurerm_resource_group" "example" {

@@ -13,3 +13,11 @@ variable "cluster" {
 variable "environments" {
   default = ["dev", "test", "prod"]
 }
+
+variable "tfe_organization" {
+  default = "HashiCraft" 
+}
+
+variable "tfe_project" {
+  default = "terraform-for-developers" 
+}

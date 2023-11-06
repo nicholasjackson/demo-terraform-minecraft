@@ -15,6 +15,23 @@ resource "azurerm_kubernetes_cluster" "cluster" {
   }
 }
 
+resource "helm_release" "vault_controller" {
+  name       = "vault-controller"
+
+  repository = "https://helm.releases.hashicorp.com"
+  chart      = "vault-secrets-operator"
+
+  set {
+    name = "defaultVaultConnection.enabled"
+    value = "true"
+  }
+  
+  set {
+    name = "defaultVaultConnection.address"
+    value = data.terraform_remote_state.hcp.outputs.vault_public_addr
+  }
+}
+
 output "client_certificate" {
   value     = azurerm_kubernetes_cluster.cluster.kube_config.0.client_certificate
   sensitive = true

@@ -10,3 +10,4 @@ plan.json
 .envrc
 .DS_Store
 node_modules/
+kubeconfig.yaml
