@@ -9,7 +9,7 @@ locals {
     "ops.json"            = "${file("${path.module}/config/ops.json")}"
     "usercache.json"      = "${file("${path.module}/config/usercache.json")}"
     "whitelist.json"      = "${file("${path.module}/config/whitelist.json")}"
-    "databases.json"      = "${file("${path.module}/config/databases.json")}"
+    //"databases.json"      = "${file("${path.module}/config/databases.json")}"
     "webservers.json"     = "${file("${path.module}/config/webservers.json")}"
   }
 }
@@ -25,6 +25,9 @@ locals {
     "SPAWN_ANIMALS"   = "true"                                                                                                          // enable animals
     "SPAWN_NPCS"      = "true"                                                                                                          // enable NPCs
     "ONLINE_MODE"     = "false"                                                                                                         // disable online mode
+    "DB_HOSTNAME"     = azurerm_postgresql_server.minecraft.name                                                                        // hostname of the database server
+    "DB_SERVER"       = "${azurerm_postgresql_server.minecraft.fqdn}:5432"                                                              // server and port of the database server
+    "DB_DATABASE"     = azurerm_postgresql_database.minecraft.name                                                                      // name of the database
   }
 }
 
@@ -36,23 +39,84 @@ resource "kubernetes_config_map" "config" {
   data = local.config_files
 }
 
-// Read from the dynamic secrets engine in vault and set a kubernetes secret
-// this does not keep the secret up to date and will only be update when the application is 
-// deployed. Better than using static database credentials but not ideal.
-data "vault_generic_secret" "sql_writer" {
-  path = "${vault_database_secrets_mount.minecraft.path}/creds/writer"
-}
-
 resource "kubernetes_secret" "db_writer" {
   metadata {
     name = "minecraft-db-${var.environment}"
   }
 
   data = {
-    db_host     = "${azurerm_postgresql_server.example.fqdn}:5432"
-    db_username = "${data.vault_generic_secret.sql_writer.data.username}@${azurerm_postgresql_server.example.name}"
-    db_password = data.vault_generic_secret.sql_writer.data.password
-    db_database = azurerm_postgresql_database.example.name
+    username = "postgres"
+    password = "invalid"
+  }
+}
+
+# create a service account for the app, this allows the vault operator to authenticate
+# the app to vault and retrieve the secrets
+resource "kubernetes_service_account" "minecraft" {
+  metadata {
+    name = "minecraft-${var.environment}"
+  }
+}
+
+# kubernetes does not automatically create service account tokens
+resource "kubernetes_secret" "minecraft-token" {
+  metadata {
+    name = "${kubernetes_service_account.minecraft.metadata.0.name}-token"
+    annotations = {
+      "kubernetes.io/service-account.name" = kubernetes_service_account.minecraft.metadata.0.name
+    }
+  }
+
+  type = "kubernetes.io/service-account-token"
+}
+
+resource "kubernetes_manifest" "vault-auth" {
+  manifest = {
+    apiVersion = "secrets.hashicorp.com/v1beta1"
+    kind       = "VaultAuth"
+
+    metadata = {
+      name      = "dev-auth"
+      namespace = "default"
+    }
+
+    spec = {
+      vaultConnectionRef = "default"
+      method             = "kubernetes"
+      mount              = "kubernetes"
+      namespace          = local.vault_namespace
+      allowedNamespaces  = ["*"]
+
+      kubernetes = {
+        role           = vault_kubernetes_auth_backend_role.dev.role_name
+        serviceAccount = kubernetes_service_account.minecraft.metadata.0.name
+      }
+    }
+  }
+}
+
+resource "kubernetes_manifest" "vault-secret" {
+  manifest = {
+    apiVersion = "secrets.hashicorp.com/v1beta1"
+    kind       = "VaultDynamicSecret"
+
+    metadata = {
+      name      = "minecraft-db"
+      namespace = "default"
+    }
+
+    spec = {
+      namespace = local.vault_namespace
+      mount     = vault_database_secrets_mount.minecraft.path
+      path      = "creds/writer"
+
+      destination = {
+        create = false
+        name   = kubernetes_secret.db_writer.metadata.0.name
+      }
+
+      vaultAuthRef = kubernetes_manifest.vault-auth.manifest.metadata.name
+    }
   }
 }
 
@@ -82,6 +146,8 @@ resource "kubernetes_deployment" "minecraft" {
       }
 
       spec {
+        service_account_name = kubernetes_service_account.minecraft.metadata.0.name
+
         container {
           image = "hashicraft/minecraftservice:v0.0.3"
           name  = "minecraft"
@@ -96,7 +162,6 @@ resource "kubernetes_deployment" "minecraft" {
               memory = "4096Mi"
             }
           }
-
 
           dynamic "env" {
             for_each = local.deployment_env

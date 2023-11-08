@@ -84,6 +84,11 @@ variable "vault_userpath_path" {
   description = "Path to the userpass auth method provisioned for the application"
 }
 
+variable "vault_kubernetes_path" {
+  default = "" 
+  description = "Path to the kubernetes auth method provisioned for the application"
+}
+
 variable "vault_kv_path" {
   default = "" 
   description = "Path to the kv secrets engine provisioned for the application"

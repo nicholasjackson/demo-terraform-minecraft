@@ -124,3 +124,11 @@ resource "tfe_variable" "vault_userpath_path" {
   workspace_id = tfe_workspace.app-dev.id
   description  = "Vault userpath path"
 }
+
+resource "tfe_variable" "vault_kubernetes_path" {
+  key          = "vault_kubernetes_path"
+  value        = vault_auth_backend.dev.path
+  category     = "terraform"
+  workspace_id = tfe_workspace.app-dev.id
+  description  = "Vault Kubernetes auth path"
+}

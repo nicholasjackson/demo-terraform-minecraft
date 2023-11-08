@@ -16,20 +16,35 @@ resource "azurerm_kubernetes_cluster" "cluster" {
 }
 
 resource "helm_release" "vault_controller" {
-  name       = "vault-controller"
+  name = "vault-controller"
 
   repository = "https://helm.releases.hashicorp.com"
   chart      = "vault-secrets-operator"
 
   set {
-    name = "defaultVaultConnection.enabled"
+    name  = "defaultVaultConnection.enabled"
     value = "true"
   }
-  
+
   set {
-    name = "defaultVaultConnection.address"
+    name  = "defaultVaultConnection.address"
     value = data.terraform_remote_state.hcp.outputs.vault_public_addr
   }
+}
+
+// configure the vault kubernetes auth backend
+resource "vault_auth_backend" "dev" {
+  type      = "kubernetes"
+  namespace = module.vault_namespace_dev.namespace
+}
+
+# define the backend configuration
+resource "vault_kubernetes_auth_backend_config" "dev" {
+  backend   = vault_auth_backend.dev.path
+  namespace = module.vault_namespace_dev.namespace
+
+  kubernetes_host    = azurerm_kubernetes_cluster.cluster.kube_config.0.host
+  kubernetes_ca_cert = base64decode(azurerm_kubernetes_cluster.cluster.kube_config.0.cluster_ca_certificate)
 }
 
 output "client_certificate" {

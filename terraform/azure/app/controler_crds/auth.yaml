@@ -1,0 +1,13 @@
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: dev-auth
+spec:
+  vaultConnectionRef: default
+  method: kubernetes
+  mount: kubernetes
+  namespace: admin/dev
+  allowedNamespaces: ["*"]
+  kubernetes:
+    role: minecraft
+    serviceAccount: minecraft-dev

@@ -45,13 +45,17 @@ data "azurerm_kubernetes_cluster" "cluster" {
   resource_group_name = var.project
 }
 
+locals {
+  vault_namespace = "admin/${var.environment}"
+}
+
 provider "vault" {
   address = var.vault_addr
   skip_child_token = true
 
   auth_login {
     path = "auth/${var.vault_approle_path}/login"
-    namespace = "admin/${var.vault_namespace}"
+    namespace = local.vault_namespace
     parameters = {
       role_id = var.vault_approle_id
       secret_id = var.vault_approle_secret_id

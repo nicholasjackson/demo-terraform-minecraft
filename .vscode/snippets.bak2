@@ -1,0 +1,350 @@
+{
+	"10_volume": {
+		"prefix": "10_volume",
+		"description": "",
+		"scope": "",
+		"body": [
+			"volume {",
+			"  name = \"config\"",
+			"",
+			"  config_map {",
+			"    default_mode = \"0666\"",
+			"    name         = kubernetes_config_map.config.metadata.0.name",
+			"",
+			"    dynamic \"items\" {",
+			"      for_each = local.config_files",
+			"",
+			"      content {",
+			"        key  = items.key",
+			"        path = items.key",
+			"      }",
+			"    }",
+			"",
+			"  }",
+			"}"
+		]
+	},
+	"9_volume_mount": {
+		"prefix": "9_volume_mount",
+		"description": "",
+		"scope": "",
+		"body": [
+			"dynamic \"volume_mount\" {",
+			"  for_each = local.config_files",
+			"",
+			"  content {",
+			"    name = \"config\"",
+			"",
+			"    mount_path = \"/minecraft/config/${replace(volume_mount.key, \"_\", \"/\")}\"",
+			"    sub_path   = volume_mount.key",
+			"    read_only  = false",
+			"  }",
+			"}"
+		]
+	},
+	"8_env": {
+		"prefix": "8_env",
+		"description": "",
+		"scope": "",
+		"body": [
+			"dynamic \"env\" {",
+			"  for_each = local.deployment_env",
+			"",
+			"  content {",
+			"    name  = env.key",
+			"    value = env.value",
+			"  }",
+			"}"
+		]
+	},
+	"7_container": {
+		"prefix": "7_container",
+		"description": "",
+		"scope": "",
+		"body": [
+			"container {",
+			"  image = \"hashicraft/minecraft:v1.20.1-fabric\"",
+			"  name  = \"minecraft\"",
+			"",
+			"  resources {",
+			"    limits = {",
+			"      cpu    = \"1\"",
+			"      memory = \"2048Mi\"",
+			"    }",
+			"    requests = {",
+			"      cpu    = \"1\"",
+			"      memory = \"2048Mi\"",
+			"    }",
+			"  }",
+			"}"
+		]
+	},
+	"6_deployment_outline": {
+		"prefix": "6_deployment_outline",
+		"description": "",
+		"scope": "",
+		"body": [
+			"resource \"kubernetes_deployment\" \"minecraft\" {",
+			"  metadata {",
+			"    name = \"minecraft-${var.environment}\"",
+			"  }",
+			"",
+			"  spec {",
+			"    replicas = 1",
+			"",
+			"    selector {",
+			"      match_labels = {",
+			"        app = \"minecraft-${var.environment}\"",
+			"      }",
+			"    }",
+			"",
+			"    strategy {",
+			"      type = \"Recreate\"",
+			"    }",
+			"",
+			"    template {",
+			"      metadata {",
+			"        labels = {",
+			"          app = \"minecraft-${var.environment}\"",
+			"        }",
+			"      }",
+			"",
+			"      spec {",
+			"      }",
+			"    }",
+			"  }",
+			"}"
+		]
+	},
+	"5_config_map": {
+		"prefix": "5_config_map",
+		"description": "",
+		"scope": "",
+		"body": [
+			"resource \"kubernetes_config_map\" \"config\" {",
+			"  metadata {",
+			"    name = \"minecraft-config-${var.environment}\"",
+			"  }",
+			"",
+			"  data = local.config_files",
+			"}"
+		]
+	},
+	"10_local_secret": {
+		"prefix": "10_local_secret",
+		"description": "",
+		"scope": "",
+		"body": [
+			"  secrets_env = {",
+			"    \"MICROSERVICES_db_host\" = {",
+			"      name = kubernetes_secret.db_writer.metadata.0.name",
+			"      key  = \"db_host\"",
+			"    }",
+			"",
+			"    \"MICROSERVICES_db_username\" = {",
+			"      name = kubernetes_secret.db_writer.metadata.0.name",
+			"      key  = \"db_username\"",
+			"    }",
+			"",
+			"    \"MICROSERVICES_db_password\" = {",
+			"      name = kubernetes_secret.db_writer.metadata.0.name",
+			"      key  = \"db_password\"",
+			"    }",
+			"    ",
+			"    \"MICROSERVICES_db_database\" = {",
+			"      name = kubernetes_secret.db_writer.metadata.0.name",
+			"      key  = \"db_database\"",
+			"    }",
+			"  }"
+		]
+	},
+	"9_boundary_role": {
+		"prefix": "9_boundary_role",
+		"description": "",
+		"scope": "",
+		"body": [
+			"resource \"boundary_role\" \"db_users\" {",
+			"  name        = \"DB Access\"",
+			"  description = \"Access to the database\"",
+			"  scope_id    = var.boundary_scope_id",
+			"",
+			"  principal_ids = [\"u_DaDHlIhmnc\"]",
+			"  grant_strings = [\"id=*;type=*;actions=*\"]",
+			"}"
+		]
+	},
+	"8_boundary_target": {
+		"prefix": "8_boundary_target",
+		"description": "",
+		"scope": "",
+		"body": [
+			"resource \"boundary_target\" \"db\" {",
+			"  name        = \"${var.environment}-db\"",
+			"  description = \"Database for ${var.environment} environment\"",
+			"  scope_id    = var.boundary_scope_id",
+			"",
+			"  type = \"tcp\"",
+			"",
+			"  address      = google_sql_database_instance.instance.public_ip_address",
+			"  default_port = 5432",
+			"  default_client_port = 5432",
+			"  ",
+			"  brokered_credential_source_ids = [",
+			"    boundary_credential_library_vault.db.id",
+			"  ]",
+			"}"
+		]
+	},
+	"7_boundary_lib": {
+		"prefix": "7_boundary_lib",
+		"description": "",
+		"scope": "",
+		"body": [
+			"resource \"boundary_credential_library_vault\" \"db\" {",
+			"  name                = \"${var.environment}-db-credentials\"",
+			"  description         = \"Database credentials for ${var.environment} environment\"",
+			"  credential_store_id = var.boundary_credential_store_id",
+			"  path                = \"${vault_database_secrets_mount.minecraft.path}/creds/reader\"",
+			"  http_method         = \"GET\"",
+			"  credential_type     = \"username_password\"",
+			"}"
+		]
+	},
+	"6_k8s_env": {
+		"prefix": "6_k8s_env",
+		"description": "",
+		"scope": "",
+		"body": [
+			"          dynamic \"env\" {",
+			"            for_each = local.secrets_env",
+			"",
+			"            content {",
+			"              name      = env.key",
+			"              value_from {",
+			"                secret_key_ref {",
+			"                  name = env.value.name",
+			"                  key  = env.value.key",
+			"                }",
+			"              }",
+			"            }",
+			"          }"
+		]
+	},
+	"5_db_secret": {
+		"prefix": "5_db_secret",
+		"description": "",
+		"scope": "",
+		"body": [
+			"data \"vault_generic_secret\" \"sql_writer\" {",
+			"  path = \"${vault_database_secrets_mount.minecraft.path}/creds/writer\"",
+			"}",
+			"",
+			"resource \"kubernetes_secret\" \"db_writer\" {",
+			"  metadata {",
+			"    name = \"minecraft-db-${var.environment}\"",
+			"  }",
+			"",
+			"  data = {",
+			"    db_host     = \"${google_sql_database_instance.instance.public_ip_address}:5432\"",
+			"    db_username = data.vault_generic_secret.sql_writer.data.username",
+			"    db_password = data.vault_generic_secret.sql_writer.data.password",
+			"    db_database = google_sql_database.minecraft.name",
+			"  }",
+			"}"
+		]
+	},
+	"4_role_importer": {
+		"prefix": "4_role_importer",
+		"description": "",
+		"scope": "",
+		"body": [
+			"# Short lived user for importing data",
+			"resource \"vault_database_secret_backend_role\" \"importer\" {",
+			"  name    = \"importer\"",
+			"  backend = vault_database_secrets_mount.minecraft.path",
+			"  db_name = vault_database_secrets_mount.minecraft.postgresql[0].name",
+			"  creation_statements = [",
+			"    \"CREATE ROLE \\\"{{name}}\\\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';\",",
+			"    \"GRANT postgres TO \\\"{{name}}\\\";\"",
+			"  ]",
+			"",
+			"  default_ttl = \"100\"",
+			"  max_ttl     = \"100\"",
+			"}"
+		]
+	},
+	"3_role_writer": {
+		"prefix": "3_role_writer",
+		"description": "",
+		"scope": "",
+		"body": [
+			"resource \"vault_database_secret_backend_role\" \"writer\" {",
+			"  name    = \"writer\"",
+			"  backend = vault_database_secrets_mount.minecraft.path",
+			"  db_name = vault_database_secrets_mount.minecraft.postgresql[0].name",
+			"  creation_statements = [",
+			"    \"CREATE ROLE \\\"{{name}}\\\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';\",",
+			"    \"GRANT SELECT ON counter TO \\\"{{name}}\\\";\",",
+			"    \"GRANT INSERT ON counter TO \\\"{{name}}\\\";\",",
+			"    \"GRANT UPDATE ON counter TO \\\"{{name}}\\\";\",",
+			"    \"GRANT DELETE ON counter TO \\\"{{name}}\\\";\",",
+			"  ]",
+			"}"
+		]
+	},
+	"2_role_reader": {
+		"prefix": "2_role_reader",
+		"description": "",
+		"scope": "",
+		"body": [
+			"resource \"vault_database_secret_backend_role\" \"reader\" {",
+			"  name    = \"reader\"",
+			"  backend = vault_database_secrets_mount.minecraft.path",
+			"  db_name = vault_database_secrets_mount.minecraft.postgresql[0].name",
+			"  creation_statements = [",
+			"    \"CREATE ROLE \\\"{{name}}\\\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';\",",
+			"    \"GRANT SELECT ON counter TO \\\"{{name}}\\\";\",",
+			"  ]",
+			"}"
+		]
+	},
+	"1_database_mount": {
+		"prefix": "1_database_mount",
+		"description": "",
+		"scope": "",
+		"body": [
+			"resource \"vault_database_secrets_mount\" \"minecraft\" {",
+			"  path = \"database/minecraft_${var.environment}\"",
+			"",
+			"  postgresql {",
+			"    name              = \"minecraft\"",
+			"    username          = \"postgres\"",
+			"    password          = random_password.root_password.result",
+			"    connection_url    = \"postgresql://{{username}}:{{password}}@${google_sql_database_instance.instance.public_ip_address}:5432/${google_sql_database.minecraft.name}\"",
+			"    verify_connection = true",
+			"    allowed_roles = [",
+			"      \"reader\",",
+			"      \"writer\",",
+			"      \"importer\"",
+			"    ]",
+			"  }",
+			"}"
+		]
+	}
+	// Place your demo-terraform-minecraft workspace snippets here. Each snippet is defined under a snippet name and has a scope, prefix, body and 
+	// description. Add comma separated ids of the languages where the snippet is applicable in the scope field. If scope 
+	// is left empty or omitted, the snippet gets applied to all languages. The prefix is what is 
+	// used to trigger the snippet and the body will be expanded and inserted. Possible variables are: 
+	// $1, $2 for tab stops, $0 for the final cursor position, and ${1:label}, ${2:another} for placeholders. 
+	// Placeholders with the same ids are connected.
+	// Example:
+	// "Print to console": {
+	// 	"scope": "javascript,typescript",
+	// 	"prefix": "log",
+	// 	"body": [
+	// 		"console.log('$1');",
+	// 		"$2"
+	// 	],
+	// 	"description": "Log output to console"
+	// }
+}
