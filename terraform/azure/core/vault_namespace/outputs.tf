@@ -6,6 +6,10 @@ output "kv_path" {
   value = vault_mount.kvv2.path
 }
 
+output "pki_path" {
+  value = vault_mount.pki.path
+}
+
 output "admin_policy" {
   value = vault_policy.admin.name
 }

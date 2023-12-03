@@ -12,6 +12,33 @@ resource "vault_mount" "kvv2" {
   namespace = vault_namespace.namespace.path
 }
 
+resource "vault_mount" "pki" {
+  path        = "pki"
+  type        = "pki"
+  description = "PKI mount for application"
+
+  default_lease_ttl_seconds = 86400
+  max_lease_ttl_seconds     = 31536000
+  
+  namespace = vault_namespace.namespace.path
+}
+
+resource "vault_pki_secret_backend_root_cert" "ca" {
+  backend               = vault_mount.pki.path
+  type                  = "internal"
+  common_name           = "${var.environment}.minecraft.internal"
+  ttl                   = "31536000"
+  format                = "pem"
+  private_key_format    = "der"
+  key_type              = "rsa"
+  key_bits              = 4096
+  exclude_cn_from_sans  = true
+  ou                    = "Development"
+  organization          = "HashiCraft"
+  
+  namespace = vault_namespace.namespace.path
+}
+
 resource "vault_policy" "admin" {
   name = "admin"
 
@@ -44,6 +71,10 @@ resource "vault_policy" "admin" {
 
   # Allow access to the kv
   path "${vault_mount.kvv2.path}/*" {
+    capabilities = ["read", "list", "create", "update", "delete"]
+  }
+  
+  path "${vault_mount.pki.path}/*" {
     capabilities = ["read", "list", "create", "update", "delete"]
   }
 

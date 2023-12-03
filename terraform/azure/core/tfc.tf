@@ -109,6 +109,14 @@ resource "tfe_variable" "vault_kv_path" {
   description  = "Vault KV path"
 }
 
+resource "tfe_variable" "vault_pki_path" {
+  key          = "vault_pki_path"
+  value        = module.vault_namespace_dev.pki_path
+  category     = "terraform"
+  workspace_id = tfe_workspace.app-dev.id
+  description  = "Vault PKI path"
+}
+
 resource "tfe_variable" "vault_namespace" {
   key          = "vault_namespace"
   value        = module.vault_namespace_dev.namespace

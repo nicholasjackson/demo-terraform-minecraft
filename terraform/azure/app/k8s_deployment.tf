@@ -10,7 +10,7 @@ locals {
     "usercache.json"      = "${file("${path.module}/config/usercache.json")}"
     "whitelist.json"      = "${file("${path.module}/config/whitelist.json")}"
     //"databases.json"      = "${file("${path.module}/config/databases.json")}"
-    "webservers.json"     = "${file("${path.module}/config/webservers.json")}"
+    "webservers.json" = "${file("${path.module}/config/webservers.json")}"
   }
 }
 
@@ -39,16 +39,6 @@ resource "kubernetes_config_map" "config" {
   data = local.config_files
 }
 
-resource "kubernetes_secret" "db_writer" {
-  metadata {
-    name = "minecraft-db-${var.environment}"
-  }
-
-  data = {
-    username = "postgres"
-    password = "invalid"
-  }
-}
 
 # create a service account for the app, this allows the vault operator to authenticate
 # the app to vault and retrieve the secrets
@@ -59,6 +49,7 @@ resource "kubernetes_service_account" "minecraft" {
 }
 
 # kubernetes does not automatically create service account tokens
+# https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.24.md#urgent-upgrade-notes
 resource "kubernetes_secret" "minecraft-token" {
   metadata {
     name = "${kubernetes_service_account.minecraft.metadata.0.name}-token"
@@ -68,56 +59,6 @@ resource "kubernetes_secret" "minecraft-token" {
   }
 
   type = "kubernetes.io/service-account-token"
-}
-
-resource "kubernetes_manifest" "vault-auth" {
-  manifest = {
-    apiVersion = "secrets.hashicorp.com/v1beta1"
-    kind       = "VaultAuth"
-
-    metadata = {
-      name      = "dev-auth"
-      namespace = "default"
-    }
-
-    spec = {
-      vaultConnectionRef = "default"
-      method             = "kubernetes"
-      mount              = "kubernetes"
-      namespace          = local.vault_namespace
-      allowedNamespaces  = ["*"]
-
-      kubernetes = {
-        role           = vault_kubernetes_auth_backend_role.dev.role_name
-        serviceAccount = kubernetes_service_account.minecraft.metadata.0.name
-      }
-    }
-  }
-}
-
-resource "kubernetes_manifest" "vault-secret" {
-  manifest = {
-    apiVersion = "secrets.hashicorp.com/v1beta1"
-    kind       = "VaultDynamicSecret"
-
-    metadata = {
-      name      = "minecraft-db"
-      namespace = "default"
-    }
-
-    spec = {
-      namespace = local.vault_namespace
-      mount     = vault_database_secrets_mount.minecraft.path
-      path      = "creds/writer"
-
-      destination = {
-        create = false
-        name   = kubernetes_secret.db_writer.metadata.0.name
-      }
-
-      vaultAuthRef = kubernetes_manifest.vault-auth.manifest.metadata.name
-    }
-  }
 }
 
 resource "kubernetes_deployment" "minecraft" {
@@ -201,8 +142,14 @@ resource "kubernetes_deployment" "minecraft" {
           }
 
           volume_mount {
-            name       = "db-secrets"
+            name       = kubernetes_secret.db_writer.metadata.0.name
             mount_path = "/etc/db_secrets"
+            read_only  = true
+          }
+
+          volume_mount {
+            name       = kubernetes_secret.pki_certs.metadata.0.name
+            mount_path = "/etc/tls"
             read_only  = true
           }
         }
@@ -227,7 +174,14 @@ resource "kubernetes_deployment" "minecraft" {
         }
 
         volume {
-          name = "db-secrets"
+          name = kubernetes_secret.pki_certs.metadata.0.name
+          secret {
+            secret_name = kubernetes_secret.db_writer.metadata.0.name
+          }
+        }
+        
+        volume {
+          name = kubernetes_secret.db_writer.metadata.0.name
           secret {
             secret_name = kubernetes_secret.db_writer.metadata.0.name
           }

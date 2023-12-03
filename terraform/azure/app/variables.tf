@@ -94,6 +94,11 @@ variable "vault_kv_path" {
   description = "Path to the kv secrets engine provisioned for the application"
 }
 
+variable "vault_pki_path" {
+  default = "" 
+  description = "Path to the pki secrets engine provisioned for the application"
+}
+
 variable "vault_namespace" {
   default = "" 
   description = "The Vault namespace to use"
