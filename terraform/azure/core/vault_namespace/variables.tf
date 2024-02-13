@@ -9,3 +9,7 @@ variable "approle_roleid" {
 variable "approle_secretid" {
   default = "" 
 }
+
+variable "userpass_usernames" {
+  default = [] 
+}

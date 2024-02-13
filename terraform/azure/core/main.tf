@@ -38,6 +38,10 @@ terraform {
       source = "hashicorp/tfe"
       version = "0.49.2"
     }
+    kubernetes = {
+      source = "hashicorp/kubernetes"
+      version = "2.25.2"
+    }
   }
 }
 

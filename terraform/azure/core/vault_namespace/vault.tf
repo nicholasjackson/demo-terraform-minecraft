@@ -1,6 +1,6 @@
 # Create a namespace for every environment
 resource "vault_namespace" "namespace" {
-  path      = var.environment
+  path = var.environment
 }
 
 resource "vault_mount" "kvv2" {
@@ -46,6 +46,7 @@ resource "vault_policy" "admin" {
   namespace = vault_namespace.namespace.path
 
   policy = <<-EOT
+  # Self token capabilities
   path "auth/token/lookup-self" {
     capabilities = ["read"]
   }
@@ -70,7 +71,7 @@ resource "vault_policy" "admin" {
     capabilities = ["update"]
   }
 
-  # Allow access to the kv
+  # Allow access to the KV
   path "${vault_mount.kvv2.path}/*" {
     capabilities = ["read", "list", "create", "update", "delete"]
   }
@@ -79,16 +80,7 @@ resource "vault_policy" "admin" {
     capabilities = ["read", "list", "create", "update", "delete"]
   }
 
-  # Allow access to the databases in the environment 
-  path "database/*" {
-    capabilities = ["read", "list", "create", "update", "delete"]
-  }
-
-  # Allow access to create dbs 
-  path "sys/mounts/database/*" {
-    capabilities = ["read", "list", "create", "update", "delete"]
-  }
-  
+  # Allow access to discover existing mounts 
   path "sys/mounts" {
     capabilities = ["read"]
   }
@@ -97,31 +89,54 @@ resource "vault_policy" "admin" {
   path "auth/*" {
     capabilities = ["read", "list", "create", "update", "delete"]
   }
+ 
+  # Allow creating JWT auth endpoints
+  path "sys/auth/jwt/*" {
+    capabilities = ["read", "list", "create", "update", "delete", "sudo"]
+  }
 
   # Allow access to create policy
   path "sys/policies/acl/*" {
+    capabilities = ["read", "list", "create", "update", "delete"]
+  }
+  
+  # Allow access to use the kubernetes secrets engine
+  path "sys/mounts/kubernetes/*" {
+    capabilities = ["read", "list", "create", "update", "delete"]
+  }
+  
+  path "kubernetes/*" {
+    capabilities = ["read", "list", "create", "update", "delete"]
+  }
+  
+  # Allow access to create db secrets engines
+  path "sys/mounts/database/*" {
+    capabilities = ["read", "list", "create", "update", "delete"]
+  }
+  
+  path "database/*" {
     capabilities = ["read", "list", "create", "update", "delete"]
   }
   EOT
 }
 
 resource "vault_auth_backend" "approle" {
-  type = "approle"
+  type      = "approle"
   namespace = vault_namespace.namespace.path
 }
 
 resource "vault_auth_backend" "userpass" {
-  type = "userpass"
+  type      = "userpass"
   namespace = vault_namespace.namespace.path
 }
 
 resource "vault_approle_auth_backend_role" "admin" {
-  backend         = vault_auth_backend.approle.path
-  role_name       = "admin-role"
-  token_policies  = ["default", vault_policy.admin.name]
-  token_period = 1800
-  token_ttl = 0
-  token_max_ttl = 0
+  backend        = vault_auth_backend.approle.path
+  role_name      = "admin-role"
+  token_policies = ["default", vault_policy.admin.name]
+  token_period   = 1800
+  token_ttl      = 0
+  token_max_ttl  = 0
 
   namespace = vault_namespace.namespace.path
 }
@@ -132,3 +147,29 @@ resource "vault_approle_auth_backend_role_secret_id" "admin" {
 
   namespace = vault_namespace.namespace.path
 }
+
+resource "random_password" "userpass_passwords" {
+  count = length(var.userpass_usernames)
+
+  length  = 16
+  special = true
+}
+
+resource "vault_generic_endpoint" "userpass_users" {
+  depends_on = [vault_auth_backend.userpass]
+
+  count = length(var.userpass_usernames)
+
+  namespace = vault_namespace.namespace.path
+  path      = "auth/userpass/users/${var.userpass_usernames[count.index]}"
+
+  ignore_absent_fields = true
+
+  data_json = <<EOT
+{
+  "policies": ["default", "${vault_policy.admin.name}"],
+  "password": "${random_password.userpass_passwords[count.index].result}"
+}
+EOT
+}
+

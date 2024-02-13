@@ -21,3 +21,7 @@ variable "tfe_organization" {
 variable "tfe_project" {
   default = "terraform-for-developers" 
 }
+
+variable "vault_users" {
+  default = []  
+}
