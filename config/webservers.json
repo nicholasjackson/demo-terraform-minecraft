@@ -1,12 +1,10 @@
 {
   "187_-2_1071": {
-    "serverPort": "8082",
-    "serverPath": "/",
-    "serverMethod": "GET"
+    "port": "8081",
+    "path": "/",
+    "method": "GET",
+    "tlsCert": "/etc/certs/minecraft_leaf-leaf.cert",
+    "tlsKey": "/etc/certs/minecraft_leaf-leaf.key"
   },
-  "192_-2_1071": {
-    "serverPort": "8081",
-    "serverPath": "/",
-    "serverMethod": "GET"
-  }
+  "192_-2_1071": {}
 }

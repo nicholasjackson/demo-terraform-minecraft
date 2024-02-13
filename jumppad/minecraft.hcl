@@ -1,6 +1,24 @@
+resource "certificate_ca" "minecraft_ca" {
+  output = data("certs")
+}
+
+resource "certificate_leaf" "minecraft_leaf" {
+  ca_key  = resource.certificate_ca.minecraft_ca.private_key.path
+  ca_cert = resource.certificate_ca.minecraft_ca.certificate.path
+
+  ip_addresses = ["127.0.0.1"]
+
+  dns_names = [
+    "localhost",
+    "minecraft.container.jumppad.dev",
+  ]
+
+  output = data("certs")
+}
+
 resource "container" "minecraft" {
   image {
-    name = "hashicraft/minecraft:v1.20.1-fabric"
+    name = "hashicraft/minecraftservice:v0.0.3"
   }
 
   network {
@@ -28,13 +46,6 @@ resource "container" "minecraft" {
     local  = 8081
   }
 
-  # Bluemap
-  port {
-    remote = 8100
-    host   = 8100
-    local  = 8100
-  }
-
   environment = {
     MODS_BACKUP               = "https://github.com/nicholasjackson/demo-terraform-minecraft/releases/download/mods/mods.tar.gz"
     GAME_MODE                 = "creative"
@@ -50,6 +61,12 @@ resource "container" "minecraft" {
     MICROSERVICES_db_host     = "postgres.container.jumppad.dev:5432"
     MICROSERVICES_db_password = "password"
     MICROSERVICES_db_database = "mydb"
+  }
+
+  # Mount the secrets that contain the certs
+  volume {
+    source      = data("certs")
+    destination = "/etc/certs"
   }
 
   # Mount the secrets that contain the db connection info

@@ -45,4 +45,3 @@ resource "azurerm_postgresql_database" "minecraft" {
   charset             = "UTF8"
   collation           = "English_United States.1252"
 }
-

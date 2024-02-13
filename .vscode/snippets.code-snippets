@@ -1,106 +1,113 @@
 {
-	"8_controller_secret": {
-		"prefix": "8_controller_secret",
+	"17_boundary_role": {
+		"prefix": "17_boundary_role",
 		"description": "",
 		"scope": "",
 		"body": [
-			"resource \"kubernetes_manifest\" \"vault-secret\" {",
-			"  manifest = {",
-			"    apiVersion = \"secrets.hashicorp.com/v1beta1\"",
-			"    kind       = \"VaultDynamicSecret\"",
+			"locals {",
+			"  boundary_user_accounts = jsondecode(var.boundary_user_accounts)",
+			"}",
 			"",
-			"    metadata = {",
-			"      name      = \"minecraft-db\"",
-			"      namespace = \"default\"",
-			"    }",
+			"resource \"boundary_role\" \"db_users\" {",
+			"  name        = \"DB Access\"",
+			"  description = \"Access to the database\"",
+			"  scope_id    = var.boundary_scope_id",
 			"",
-			"    spec = {",
-			"      namespace = local.vault_namespace",
-			"      mount     = vault_database_secrets_mount.minecraft.path",
-			"      path      = \"creds/writer\"",
+			"  principal_ids = [for user, details in local.boundary_user_accounts : details.id]",
+			"  grant_strings = [\"id=*;type=*;actions=*\"]",
+			"}"
+		]
+	},
+	"16_boundary_target": {
+		"prefix": "16_boundary_target",
+		"description": "",
+		"scope": "",
+		"body": [
+			"resource \"boundary_target\" \"db\" {",
+			"  name        = \"${var.environment}-db\"",
+			"  description = \"Database for ${var.environment} environment\"",
+			"  scope_id    = var.boundary_scope_id",
 			"",
-			"      destination = {",
-			"        create = false",
-			"        name   = kubernetes_secret.db_writer.metadata.0.name",
-			"      }",
+			"  type = \"tcp\"",
 			"",
-			"      vaultAuthRef = kubernetes_manifest.vault-auth.manifest.metadata.name",
-			"    }",
+			"  address             = azurerm_postgresql_server.minecraft.fqdn",
+			"  default_port        = 5432",
+			"  default_client_port = 5432",
+			"",
+			"  brokered_credential_source_ids = [",
+			"    boundary_credential_library_vault.db.id",
+			"  ]",
+			"}"
+		]
+	},
+	"15_boundary_library": {
+		"prefix": "15_boundary_library",
+		"description": "",
+		"scope": "",
+		"body": [
+			"resource \"boundary_credential_library_vault\" \"db\" {",
+			"  name                = \"${var.environment}-db-credentials\"",
+			"  description         = \"Database credentials for ${var.environment} environment\"",
+			"  credential_store_id = var.boundary_credential_store_id",
+			"  path                = \"${vault_database_secrets_mount.minecraft.path}/creds/reader\"",
+			"  http_method         = \"GET\"",
+			"  credential_type     = \"username_password\"",
+			"}"
+		]
+	},
+	"14_db_volume_mount": {
+		"prefix": "14_db_volume_mount",
+		"description": "",
+		"scope": "",
+		"body": [
+			"volume_mount {",
+			"  name       = kubernetes_secret.db_writer.metadata.0.name",
+			"  mount_path = \"/etc/db_secrets\"",
+			"  read_only  = true",
+			"}"
+		]
+	},
+	"13_db_volume": {
+		"prefix": "13_db_volume",
+		"description": "",
+		"scope": "",
+		"body": [
+			"volume {",
+			"  name = kubernetes_secret.db_writer.metadata.0.name",
+			"  secret {",
+			"    secret_name = kubernetes_secret.db_writer.metadata.0.name",
 			"  }",
 			"}"
 		]
 	},
-	"7_controller_auth": {
-		"prefix": "7_controller_auth",
+	"12_db_secret": {
+		"prefix": "12_db_secret",
 		"description": "",
 		"scope": "",
 		"body": [
-			"resource \"kubernetes_manifest\" \"vault-auth\" {",
-			"  manifest = {",
-			"    apiVersion = \"secrets.hashicorp.com/v1beta1\"",
-			"    kind       = \"VaultAuth\"",
+			"data \"vault_generic_secret\" \"db_creds\" {",
+			"  path = \"${vault_database_secrets_mount.minecraft.path}/creds/writer\"",
+			"}",
 			"",
-			"    metadata = {",
-			"      name      = \"dev-auth\"",
-			"      namespace = \"default\"",
-			"    }",
+			"resource \"kubernetes_secret\" \"db_writer\" {",
+			"  metadata {",
+			"    name = \"minecraft-db-${var.environment}\"",
+			"  }",
 			"",
-			"    spec = {",
-			"      vaultConnectionRef = \"default\"",
-			"      method             = \"kubernetes\"",
-			"      mount              = \"kubernetes\"",
-			"      namespace          = local.vault_namespace",
-			"      allowedNamespaces  = [\"*\"]",
-			"",
-			"      kubernetes = {",
-			"        role           = vault_kubernetes_auth_backend_role.dev.role_name",
-			"        serviceAccount = kubernetes_service_account.minecraft.metadata.0.name",
-			"      }",
-			"    }",
+			"  data = {",
+			"    username = data.vault_generic_secret.db_creds.data.username",
+			"    password = data.vault_generic_secret.db_creds.data.password",
 			"  }",
 			"}"
 		]
 	},
-	"6_secrets_auth": {
-		"prefix": "6_secrets_auth",
-		"description": "",
-		"scope": "",
-		"body": [
-			"# configure the role that the app will use to authenticate to vault",
-			"resource \"vault_kubernetes_auth_backend_role\" \"dev\" {",
-			"  backend                          = var.vault_kubernetes_path",
-			"  role_name                        = \"minecraft\"",
-			"  bound_service_account_namespaces = [\"default\"]",
-			"  bound_service_account_names      = [kubernetes_service_account.minecraft.metadata.0.name]",
-			"  token_ttl                        = 3600",
-			"  token_policies                   = [\"default\", vault_policy.db_secrets.name]",
-			"}"
-		]
-	},
-	"5_secrets_policy": {
-		"prefix": "5_secrets_policy",
-		"description": "",
-		"scope": "",
-		"body": [
-			"# create a policy that allows the app to read the database credentials",
-			"resource \"vault_policy\" \"db_secrets\" {",
-			"  name = \"db_secrets\"",
-			"",
-			"  policy = <<-EOT",
-			"  path \"${vault_database_secrets_mount.minecraft.path}/creds/writer\" {",
-			"    capabilities = [\"read\"]",
-			"  }",
-			"  EOT",
-			"}"
-		]
-	},
-	"4_role_writer": {
-		"prefix": "4_role_writer",
+	"11_db_writer": {
+		"prefix": "11_db_writer",
 		"description": "",
 		"scope": "",
 		"body": [
 			"resource \"vault_database_secret_backend_role\" \"writer\" {",
-			"  depends_on = [kubernetes_job.sql_import]",
+			"  //depends_on = [kubernetes_job.sql_import]",
 			"",
 			"  name    = \"writer\"",
 			"  backend = vault_database_secrets_mount.minecraft.path",
@@ -115,15 +122,13 @@
 			"}"
 		]
 	},
-	"3_role_reader": {
-		"prefix": "3_role_reader",
+	"10_db_role_reader": {
+		"prefix": "10_db_role_reader",
 		"description": "",
 		"scope": "",
 		"body": [
-			"// the following two roles can only be created after the counter table is generated",
-			"// from the sql import",
 			"resource \"vault_database_secret_backend_role\" \"reader\" {",
-			"  depends_on = [kubernetes_job.sql_import]",
+			"  //depends_on = [kubernetes_job.sql_import]",
 			"",
 			"  name    = \"reader\"",
 			"  backend = vault_database_secrets_mount.minecraft.path",
@@ -135,12 +140,11 @@
 			"}"
 		]
 	},
-	"2_role_import": {
-		"prefix": "2_role_import",
+	"09_db_role_import": {
+		"prefix": "09_db_role_import",
 		"description": "",
 		"scope": "",
 		"body": [
-			"# Short lived user for importing data",
 			"resource \"vault_database_secret_backend_role\" \"importer\" {",
 			"  name    = \"importer\"",
 			"  backend = vault_database_secrets_mount.minecraft.path",
@@ -155,13 +159,13 @@
 			"}"
 		]
 	},
-	"1_database_mount": {
-		"prefix": "1_database_mount",
+	"08_db_mount": {
+		"prefix": "08_db_mount",
 		"description": "",
 		"scope": "",
 		"body": [
 			"resource \"vault_database_secrets_mount\" \"minecraft\" {",
-			"  depends_on = [ azurerm_postgresql_firewall_rule.minecraft ]",
+			"  depends_on = [azurerm_postgresql_firewall_rule.minecraft]",
 			"",
 			"  path = \"database/minecraft_${var.environment}\"",
 			"",
@@ -179,8 +183,121 @@
 			"  }",
 			"}"
 		]
+	},
+	"07_pki_volume_mount": {
+		"prefix": "07_pki_volume_mount",
+		"description": "",
+		"scope": "",
+		"body": [
+			"volume_mount {",
+			"  name       = kubernetes_secret.pki_certs.metadata.0.name",
+			"  mount_path = \"/etc/tls\"",
+			"  read_only  = true",
+			"}"
+		]
+	},
+	"06_pki_volume": {
+		"prefix": "06_pki_volume",
+		"description": "",
+		"scope": "",
+		"body": [
+			"        volume {",
+			"          name = kubernetes_secret.pki_certs.metadata.0.name",
+			"          secret {",
+			"            secret_name = kubernetes_secret.pki_certs.metadata.0.name",
+			"          }",
+			"        }"
+		]
+	},
+	"05_pki_secret": {
+		"prefix": "05_pki_secret",
+		"description": "",
+		"scope": "",
+		"body": [
+			"resource \"kubernetes_secret\" \"pki_certs\" {",
+			"  metadata {",
+			"    name = \"minecraft-pki-${var.environment}\"",
+			"  }",
+			"",
+			"  type = \"kubernetes.io/tls\"",
+			"",
+			"  data = {",
+			"    \"tls.key\" = vault_pki_secret_backend_cert.app.private_key",
+			"    \"tls.crt\" = vault_pki_secret_backend_cert.app.certificate",
+			"  }",
+			"}"
+		]
+	},
+	"04_pki_cert": {
+		"prefix": "04_pki_cert",
+		"description": "",
+		"scope": "",
+		"body": [
+			"resource \"vault_pki_secret_backend_cert\" \"app\" {",
+			"  backend     = var.vault_pki_path",
+			"  name        = vault_pki_secret_backend_role.app.name",
+			"  common_name = \"app.${var.environment}.minecraft.internal\"",
+			"  ttl         = \"168h\" // 7 days",
+			"}"
+		]
+	},
+	"03_pki_role": {
+		"prefix": "03_pki_role",
+		"description": "",
+		"scope": "",
+		"body": [
+			"resource \"vault_pki_secret_backend_role\" \"app\" {",
+			"  backend          = var.vault_pki_path",
+			"  name             = \"app_role\"",
+			"  ttl              = 2592000 // 30 days",
+			"  allow_ip_sans    = true",
+			"  key_type         = \"rsa\"",
+			"  key_bits         = 4096",
+			"  allow_subdomains = true",
+			"  allowed_domains  = [\"${var.environment}.minecraft.internal\"]",
+			"}"
+		]
+	},
+	"02_pki_ca": {
+		"prefix": "02_pki_ca",
+		"description": "",
+		"scope": "",
+		"body": [
+			"resource \"vault_pki_secret_backend_root_cert\" \"ca\" {",
+			"  backend               = vault_mount.pki.path",
+			"  type                  = \"internal\"",
+			"  common_name           = \"${var.environment}.minecraft.internal\"",
+			"  ttl                   = \"31536000\"",
+			"  format                = \"pem\"",
+			"  private_key_format    = \"der\"",
+			"  key_type              = \"rsa\"",
+			"  key_bits              = 4096",
+			"  exclude_cn_from_sans  = true",
+			"  ou                    = \"Development\"",
+			"  organization          = \"HashiCraft\"",
+			"  ",
+			"  namespace = vault_namespace.namespace.path",
+			"}"
+		]
+	},
+	"01_pki_mount": {
+		"prefix": "01_pki_mount",
+		"description": "",
+		"scope": "",
+		"body": [
+			"resource \"vault_mount\" \"pki\" {",
+			"  path        = \"pki\"",
+			"  type        = \"pki\"",
+			"  description = \"PKI mount for application\"",
+			"",
+			"  default_lease_ttl_seconds = 86400",
+			"  max_lease_ttl_seconds     = 31536000",
+			"  ",
+			"  namespace = vault_namespace.namespace.path",
+			"}"
+		]
 	}
-	// Place your demo-terraform-minecraft workspace snippets here. Each snippet is defined under a snippet name and has a scope, prefix, body and 
+	// Place your azure workspace snippets here. Each snippet is defined under a snippet name and has a scope, prefix, body and 
 	// description. Add comma separated ids of the languages where the snippet is applicable in the scope field. If scope 
 	// is left empty or omitted, the snippet gets applied to all languages. The prefix is what is 
 	// used to trigger the snippet and the body will be expanded and inserted. Possible variables are: 

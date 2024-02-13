@@ -7,7 +7,7 @@ output "kv_path" {
 }
 
 output "pki_path" {
-  value = vault_mount.pki.path
+  value = "pki"//vault_mount.pki.path
 }
 
 output "admin_policy" {

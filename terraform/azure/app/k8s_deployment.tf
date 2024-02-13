@@ -142,16 +142,17 @@ resource "kubernetes_deployment" "minecraft" {
           }
 
           volume_mount {
+            name       = kubernetes_secret.pki_certs.metadata.0.name
+            mount_path = "/etc/tls"
+            read_only  = true
+          }
+
+          volume_mount {
             name       = kubernetes_secret.db_writer.metadata.0.name
             mount_path = "/etc/db_secrets"
             read_only  = true
           }
 
-          volume_mount {
-            name       = kubernetes_secret.pki_certs.metadata.0.name
-            mount_path = "/etc/tls"
-            read_only  = true
-          }
         }
 
         volume {
@@ -176,17 +177,16 @@ resource "kubernetes_deployment" "minecraft" {
         volume {
           name = kubernetes_secret.pki_certs.metadata.0.name
           secret {
-            secret_name = kubernetes_secret.db_writer.metadata.0.name
+            secret_name = kubernetes_secret.pki_certs.metadata.0.name
           }
         }
-        
+
         volume {
           name = kubernetes_secret.db_writer.metadata.0.name
           secret {
             secret_name = kubernetes_secret.db_writer.metadata.0.name
           }
         }
-
       }
     }
   }

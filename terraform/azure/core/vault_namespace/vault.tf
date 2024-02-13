@@ -39,6 +39,7 @@ resource "vault_pki_secret_backend_root_cert" "ca" {
   namespace = vault_namespace.namespace.path
 }
 
+
 resource "vault_policy" "admin" {
   name = "admin"
 
