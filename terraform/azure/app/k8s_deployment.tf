@@ -61,7 +61,10 @@ resource "kubernetes_secret" "minecraft-token" {
   type = "kubernetes.io/service-account-token"
 }
 
+
 resource "kubernetes_deployment" "minecraft" {
+  depends_on = [kubernetes_job.sql_import]
+
   metadata {
     name = "minecraft-${var.environment}"
   }
@@ -188,6 +191,89 @@ resource "kubernetes_deployment" "minecraft" {
           }
         }
       }
+    }
+  }
+}
+
+resource "vault_policy" "minecraft_secrets" {
+  name = "minecraft-secrets"
+
+  policy = <<EOF
+  path "${vault_database_secrets_mount.minecraft.path}/creds/writer" {
+
+    capabilities = ["read", "create", "update"]
+  }
+  EOF
+}
+
+resource "vault_kubernetes_auth_backend_role" "minecraft" {
+  backend   = "kubernetes"
+  role_name = "minecraft"
+
+  bound_service_account_names      = [kubernetes_service_account.minecraft.metadata.0.name]
+  bound_service_account_namespaces = ["default"]
+  token_policies                   = [vault_policy.minecraft_secrets.name]
+}
+
+resource "kubernetes_manifest" "vaultauth_dev_auth" {
+  manifest = {
+    "apiVersion" = "secrets.hashicorp.com/v1beta1"
+    "kind"       = "VaultAuth"
+    "metadata" = {
+      "name"      = "dev-auth"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "allowedNamespaces" = [
+        "*",
+      ]
+      "kubernetes" = {
+        "role"                   = vault_kubernetes_auth_backend_role.minecraft.role_name
+        "serviceAccount"         = kubernetes_service_account.minecraft.metadata.0.name
+        "tokenExpirationSeconds" = 600
+      }
+      "method"             = "kubernetes"
+      "mount"              = "kubernetes"
+      "namespace"          = local.vault_namespace
+      "vaultConnectionRef" = "default"
+    }
+  }
+}
+
+resource "kubernetes_cluster_role_binding" "minecraft" {
+  metadata {
+    name = "role-tokenreview-binding"
+  }
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = "system:auth-delegator"
+  }
+  subject {
+    kind      = "ServiceAccount"
+    name      = kubernetes_service_account.minecraft.metadata.0.name
+    namespace = "default"
+  }
+}
+
+resource "kubernetes_manifest" "vault_dynamic_secret" {
+  manifest = {
+    "apiVersion" = "secrets.hashicorp.com/v1beta1"
+    "kind"       = "VaultDynamicSecret"
+    "metadata" = {
+      "name"      = "minecraft-db-${var.environment}"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "namespace" = local.vault_namespace
+      "mount"     = vault_database_secrets_mount.minecraft.path
+      "path"      = "creds/writer"
+
+      "destination" = {
+        "create" = false
+        "name"   = kubernetes_secret.db_writer.metadata.0.name
+      }
+      "vaultAuthRef" = "dev-auth"
     }
   }
 }

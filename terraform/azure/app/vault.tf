@@ -62,7 +62,7 @@ resource "vault_database_secret_backend_role" "importer" {
 }
 
 resource "vault_database_secret_backend_role" "reader" {
-  //depends_on = [kubernetes_job.sql_import]
+  depends_on = [kubernetes_job.sql_import]
 
   name    = "reader"
   backend = vault_database_secrets_mount.minecraft.path
@@ -74,7 +74,7 @@ resource "vault_database_secret_backend_role" "reader" {
 }
 
 resource "vault_database_secret_backend_role" "writer" {
-  //depends_on = [kubernetes_job.sql_import]
+  depends_on = [kubernetes_job.sql_import]
 
   name    = "writer"
   backend = vault_database_secrets_mount.minecraft.path
@@ -89,10 +89,14 @@ resource "vault_database_secret_backend_role" "writer" {
 }
 
 data "vault_generic_secret" "db_creds" {
+  depends_on = [kubernetes_job.sql_import]
+
   path = "${vault_database_secrets_mount.minecraft.path}/creds/writer"
 }
 
 resource "kubernetes_secret" "db_writer" {
+  depends_on = [kubernetes_job.sql_import]
+
   metadata {
     name = "minecraft-db-${var.environment}"
   }

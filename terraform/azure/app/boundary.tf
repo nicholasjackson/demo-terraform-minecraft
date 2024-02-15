@@ -33,5 +33,5 @@ resource "boundary_role" "db_users" {
   scope_id    = var.boundary_scope_id
 
   principal_ids = [for user, details in local.boundary_user_accounts : details.id]
-  grant_strings = ["id=*;type=*;actions=*"]
+  grant_strings = ["ids=*;type=*;actions=*"]
 }

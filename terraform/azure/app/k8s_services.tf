@@ -37,11 +37,11 @@ resource "kubernetes_service" "microservice" {
   }
 }
 
-resource "cloudflare_record" "minecraft" {
-  zone_id = var.cloudflare_zone_id
-  name    = "minecraft-${var.environment}"
-  value   = kubernetes_service.minecraft.status.0.load_balancer.0.ingress.0.ip
-  type    = "A"
-  ttl     = 360
-  proxied = false
-}
+//resource "cloudflare_record" "minecraft" {
+  //zone_id = var.cloudflare_zone_id
+  //name    = "minecraft-${var.environment}"
+  //value   = kubernetes_service.minecraft.status.0.load_balancer.0.ingress.0.ip
+  //type    = "A"
+  //ttl     = 360
+  //proxied = false
+//}
