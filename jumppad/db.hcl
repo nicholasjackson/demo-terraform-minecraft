@@ -4,7 +4,7 @@ resource "container" "postgres" {
   }
 
   network {
-    id = resource.network.local.id
+    id = resource.network.local.resource_id
   }
 
   port {

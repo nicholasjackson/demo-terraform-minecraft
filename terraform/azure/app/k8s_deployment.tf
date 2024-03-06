@@ -61,138 +61,12 @@ resource "kubernetes_secret" "minecraft-token" {
   type = "kubernetes.io/service-account-token"
 }
 
-
-resource "kubernetes_deployment" "minecraft" {
-  depends_on = [kubernetes_job.sql_import]
-
+resource "kubernetes_secret" "db_writer" {
   metadata {
-    name = "minecraft-${var.environment}"
+    name = "minecraft-db-${var.environment}"
   }
 
-  spec {
-    replicas = 1
-
-    selector {
-      match_labels = {
-        app = "minecraft-${var.environment}"
-      }
-    }
-
-    strategy {
-      type = "Recreate"
-    }
-
-    template {
-      metadata {
-        labels = {
-          app = "minecraft-${var.environment}"
-        }
-      }
-
-      spec {
-        service_account_name = kubernetes_service_account.minecraft.metadata.0.name
-
-        container {
-          image = "hashicraft/minecraftservice:v0.0.3"
-          name  = "minecraft"
-
-          resources {
-            limits = {
-              cpu    = "1"
-              memory = "4096Mi"
-            }
-            requests = {
-              cpu    = "1"
-              memory = "4096Mi"
-            }
-          }
-
-          dynamic "env" {
-            for_each = local.deployment_env
-
-            content {
-              name  = env.key
-              value = env.value
-            }
-          }
-
-          // mounting secrets as environment variables means they are not updated
-          // when the secret changes
-          //dynamic "env" {
-          //  for_each = local.secrets_env
-
-          //  content {
-          //    name = env.key
-          //    value_from {
-          //      secret_key_ref {
-          //        name = env.value.name
-          //        key  = env.value.key
-          //      }
-          //    }
-          //  }
-          //}
-
-          dynamic "volume_mount" {
-            for_each = local.config_files
-
-            content {
-              name = "config"
-
-              mount_path = "/minecraft/config/${replace(volume_mount.key, "_", "/")}"
-              sub_path   = volume_mount.key
-              read_only  = false
-            }
-          }
-
-          volume_mount {
-            name       = kubernetes_secret.pki_certs.metadata.0.name
-            mount_path = "/etc/tls"
-            read_only  = true
-          }
-
-          volume_mount {
-            name       = kubernetes_secret.db_writer.metadata.0.name
-            mount_path = "/etc/db_secrets"
-            read_only  = true
-          }
-
-        }
-
-        volume {
-          name = "config"
-
-          config_map {
-            default_mode = "0666"
-            name         = kubernetes_config_map.config.metadata.0.name
-
-            dynamic "items" {
-              for_each = local.config_files
-
-              content {
-                key  = items.key
-                path = items.key
-              }
-            }
-
-          }
-        }
-
-        volume {
-          name = kubernetes_secret.pki_certs.metadata.0.name
-          secret {
-            secret_name = kubernetes_secret.pki_certs.metadata.0.name
-          }
-        }
-
-        volume {
-          name = kubernetes_secret.db_writer.metadata.0.name
-          secret {
-            secret_name = kubernetes_secret.db_writer.metadata.0.name
-          }
-        }
-      }
-    }
-  }
+  data = {}
 }
 
 resource "vault_policy" "minecraft_secrets" {
@@ -274,6 +148,108 @@ resource "kubernetes_manifest" "vault_dynamic_secret" {
         "name"   = kubernetes_secret.db_writer.metadata.0.name
       }
       "vaultAuthRef" = "dev-auth"
+    }
+  }
+}
+
+
+resource "kubernetes_deployment" "minecraft" {
+  //depends_on = [kubernetes_job.sql_import]
+
+  metadata {
+    name = "minecraft-${var.environment}"
+  }
+
+  spec {
+    replicas = 1
+
+    selector {
+      match_labels = {
+        app = "minecraft-${var.environment}"
+      }
+    }
+
+    strategy {
+      type = "Recreate"
+    }
+
+    template {
+      metadata {
+        labels = {
+          app = "minecraft-${var.environment}"
+        }
+      }
+
+      spec {
+        service_account_name = kubernetes_service_account.minecraft.metadata.0.name
+
+        container {
+          image = "hashicraft/minecraftservice:v0.0.3"
+          name  = "minecraft"
+
+          resources {
+            limits = {
+              cpu    = "1"
+              memory = "4096Mi"
+            }
+            requests = {
+              cpu    = "1"
+              memory = "4096Mi"
+            }
+          }
+
+          dynamic "env" {
+            for_each = local.deployment_env
+
+            content {
+              name  = env.key
+              value = env.value
+            }
+          }
+          volume_mount {
+            name      = "db-secrets"
+            mount_path = "/etc/db_secrets"
+            read_only  = true
+          }
+          dynamic "volume_mount" {
+            for_each = local.config_files
+
+            content {
+              name = "config"
+
+              mount_path = "/minecraft/config/${replace(volume_mount.key, "_", "/")}"
+              sub_path   = volume_mount.key
+              read_only  = false
+            }
+          }
+        }
+
+        volume {
+          name = "db-secrets"
+          secret {
+            secret_name = kubernetes_secret.db_writer.metadata.0.name
+          }
+        }
+
+        volume {
+          name = "config"
+
+          config_map {
+            default_mode = "0666"
+            name         = kubernetes_config_map.config.metadata.0.name
+
+            dynamic "items" {
+              for_each = local.config_files
+
+              content {
+                key  = items.key
+                path = items.key
+              }
+            }
+
+          }
+        }
+      }
     }
   }
 }
